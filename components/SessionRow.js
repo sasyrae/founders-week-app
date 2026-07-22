@@ -1,0 +1,118 @@
+"use client";
+import { useState } from "react";
+import { fmtTime } from "@/lib/utils";
+
+/* One agenda row. onToggle(accessCode?) is async and returns the API
+   result ({ ok, error, code }). Access codes and capacity are enforced
+   server-side; this component just surfaces the outcomes. */
+export default function SessionRow({ s, mine, onToggle, readonly }) {
+  const [askCode, setAskCode] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeErr, setCodeErr] = useState("");
+  const [rowErr, setRowErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const gated = s.gated ?? !!s.accessCode;
+  const taken = s.taken ?? 0;
+  const full = s.capacity > 0 && taken >= s.capacity && !mine;
+
+  const doToggle = async (accessCode) => {
+    setBusy(true);
+    setRowErr("");
+    const r = (await onToggle(accessCode)) || {};
+    setBusy(false);
+    return r;
+  };
+
+  const handleClick = async () => {
+    if (mine || !gated) {
+      const r = await doToggle();
+      if (!r.ok && r.error) setRowErr(r.error);
+      setAskCode(false);
+      setCodeErr("");
+      return;
+    }
+    setAskCode(!askCode);
+  };
+
+  const submitCode = async () => {
+    const r = await doToggle(code);
+    if (r.ok) {
+      setAskCode(false);
+      setCode("");
+      setCodeErr("");
+    } else {
+      setCodeErr(r.error || "That code isn't right — check your invitation.");
+    }
+  };
+
+  return (
+    <div className={"fw-sess" + (mine ? " mine" : "")}>
+      <div className="fw-time">
+        <span>{fmtTime(s.start)}</span>
+        <span className="fw-timeend">{fmtTime(s.end)}</span>
+      </div>
+      <div className="fw-dot" />
+      <div className="fw-card">
+        <div className="fw-cardtop">
+          {String(s.track)
+            .split("+")
+            .map((t) => t.trim())
+            .filter(Boolean)
+            .map((t) => (
+              <span key={t} className={"fw-track t-" + t.toLowerCase()}>
+                {t}
+              </span>
+            ))}
+          {gated && <span className="fw-lock">Invite only</span>}
+          {s.capacity > 0 && !full && <span className="fw-cap">Limited · {s.capacity} seats</span>}
+          {full && <span className="fw-full">Full</span>}
+        </div>
+        <div className="fw-sesstitle">{s.title}</div>
+        {s.speaker && <div className="fw-speaker">{s.speaker}</div>}
+        {s.desc && <div className="fw-desc">{s.desc}</div>}
+        <div className="fw-cardfoot">
+          <span className="fw-loc">{s.location}</span>
+          {!readonly && (
+            <button
+              className={"fw-add" + (mine ? " added" : "")}
+              disabled={busy || full}
+              onClick={handleClick}
+            >
+              {mine
+                ? s.ctaDone || "✓ Registered"
+                : full
+                ? "Session full"
+                : gated
+                ? "Register with code"
+                : s.cta || "+ Register for session"}
+            </button>
+          )}
+        </div>
+        {askCode && !mine && (
+          <div className="fw-codebox">
+            <input
+              className="fw-input"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value);
+                setCodeErr("");
+              }}
+              placeholder="Access code"
+              onKeyDown={(e) => e.key === "Enter" && submitCode()}
+            />
+            <button className="fw-add" onClick={submitCode} disabled={busy}>
+              Confirm
+            </button>
+            {codeErr && (
+              <div className="fw-err" style={{ width: "100%" }}>
+                {codeErr}
+              </div>
+            )}
+          </div>
+        )}
+        {rowErr && <div className="fw-err">{rowErr}</div>}
+      </div>
+    </div>
+  );
+}
