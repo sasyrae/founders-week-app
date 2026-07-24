@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "./api";
 import { fmtTime, fmtWhen } from "@/lib/utils";
 import { DEFAULT_SUBJECT, DEFAULT_TEMPLATE, HOTEL_NIGHTS } from "@/lib/constants";
@@ -648,6 +648,18 @@ function SendUpdate({ config, announcements, setAnnouncements, flash }) {
 function SessionEditor({ days, sessions, saveSessions, flash }) {
   const [editing, setEditing] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  /* The editor renders above the session list, so opening it from a row
+     far down the page would scroll it out of sight and look like nothing
+     happened. Bring it into view whenever a different session is opened
+     (keyed on id, so it doesn't re-scroll on every keystroke). */
+  const editorRef = useRef(null);
+  const editingId = editing ? editing.id || "new" : null;
+  useEffect(() => {
+    if (editingId && editorRef.current) {
+      editorRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [editingId]);
   const blank = {
     id: "",
     day: days[0]?.id,
@@ -692,7 +704,13 @@ function SessionEditor({ days, sessions, saveSessions, flash }) {
         </button>
       )}
       {editing && (
-        <div className="fw-editor">
+        <div className="fw-editor" ref={editorRef}>
+          <div className="fw-dayhead" style={{ padding: "0 0 8px", marginBottom: 14 }}>
+            <span>{editing.id ? "Editing session" : "New session"}</span>
+            <button className="fw-linkbtn" onClick={() => setEditing(null)}>
+              Close
+            </button>
+          </div>
           <label className="fw-label">Title</label>
           <input
             className="fw-input"
