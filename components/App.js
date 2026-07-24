@@ -6,7 +6,7 @@ import Register from "./Register";
 import MySchedule from "./MySchedule";
 import Welcome from "./Welcome";
 import Updates from "./Updates";
-import Eats from "./Eats";
+import Guide from "./Guide";
 import Admin from "./Admin";
 
 const ME_KEY = "fw26_me_email";
@@ -121,7 +121,7 @@ export default function App() {
             Updates
           </button>
           <button className={view === "eats" ? "on" : ""} onClick={() => setView("eats")}>
-            Good Eats
+            Neighborhood Guide
           </button>
           {!me && (
             <button className={view === "register" ? "on" : ""} onClick={() => setView("register")}>
@@ -175,7 +175,7 @@ export default function App() {
       )}
       {view === "welcome" && <Welcome config={config} me={me} goAgenda={() => setView("agenda")} />}
       {view === "updates" && <Updates config={config} />}
-      {view === "eats" && <Eats config={config} />}
+      {view === "eats" && <Guide config={config} />}
       {view === "admin" && <Admin flash={flash} refreshEvent={loadEvent} />}
 
       <footer className="fw-foot">
