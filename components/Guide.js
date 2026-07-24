@@ -69,8 +69,9 @@ export default function Guide({ config }) {
     <main className="fw-main fw-narrow2">
       <h2 className="fw-h2">Neighborhood Guide</h2>
       <p className="fw-p">
-        Williamsburg is yours between sessions. Where we'd send a friend — everything below is a
-        short walk from The William Vale.
+        Williamsburg is yours between sessions. The picks below are our guide to where to eat, hang,
+        and shop. Do it solo or grab a new founder friend and explore. Everything below is a short
+        walk from The William Vale.
       </p>
 
       <div className="fw-dayhead">
