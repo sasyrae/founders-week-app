@@ -86,7 +86,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
   const toggleSession = async (sid, accessCode) => {
     if (!me) {
       setView("register");
-      flash("Register first — it takes 20 seconds.");
+      flash("Register for the event first to add sessions.");
       return { ok: false };
     }
     const had = (me.sessions || []).includes(sid);

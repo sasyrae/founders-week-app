@@ -27,7 +27,7 @@ export async function POST(req) {
     const attendee = await getAttendee(email);
     if (!attendee) {
       return NextResponse.json(
-        { error: "Register first — it takes 20 seconds.", code: "NO_ATTENDEE" },
+        { error: "Register for the event first to add sessions.", code: "NO_ATTENDEE" },
         { status: 403 }
       );
     }
