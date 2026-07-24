@@ -11,8 +11,13 @@ import Admin from "./Admin";
 
 const ME_KEY = "fw26_me_email";
 
-export default function App() {
-  const [config, setConfig] = useState(null);
+export default function App({ initialConfig = null, initialSessions = null }) {
+  // When the server pre-loaded the event, start with it already in state so
+  // there's no "Loading the event…" flash. Otherwise fall back to a client
+  // fetch on mount (see the effect below).
+  const [config, setConfig] = useState(
+    initialConfig ? { ...initialConfig, sessions: initialSessions || [] } : null
+  );
   const [me, setMeState] = useState(null);
   const [view, setView] = useState("agenda");
   const [banner, setBanner] = useState(null);
@@ -43,7 +48,8 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      await loadEvent();
+      // Only fetch on mount if the server didn't already give us the event.
+      if (!initialConfig) await loadEvent();
       // Re-hydrate "who am I" if we remembered them.
       let saved = null;
       try {
@@ -62,7 +68,7 @@ export default function App() {
           }
       }
     })();
-  }, [loadEvent]);
+  }, [loadEvent, initialConfig]);
 
   // Toggle a session for the current attendee. Returns the API result so
   // SessionRow can surface access-code / full errors inline.
