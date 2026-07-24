@@ -26,7 +26,7 @@ Copy `.env.local.example` to `.env.local` for local development, and set the **s
 | `ADMIN_PASSWORD` | Password for Host tools | **yes** |
 | `ADMIN_SESSION_SECRET` | Random string used to sign the admin login cookie | **yes** |
 | `RESEND_API_KEY` | Resend API key | **yes** |
-| `CONFIRM_FROM_EMAIL` | Verified from-address, e.g. `Flybridge Founders Week <founders-week@flybridge.com>` | no |
+| `CONFIRM_FROM_EMAIL` | Verified from-address, e.g. `Flybridge Founders Week <events@flybridge.com>` | no |
 | `SLACK_WEBHOOK_URL` | Slack incoming webhook (leave blank to disable cross-post) | **yes** |
 | `NEXT_PUBLIC_SITE_URL` | The public site URL | no |
 
