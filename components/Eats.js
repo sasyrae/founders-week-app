@@ -1,5 +1,16 @@
 "use client";
 
+/* Each spot links out. If an entry has an explicit `url` we use it;
+   otherwise we link to a Google Maps search for that restaurant in
+   Williamsburg — always accurate, and gives directions/hours/phone. */
+function eatLink(e) {
+  if (e.url) return e.url;
+  return (
+    "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(`${e.name} Williamsburg Brooklyn`)
+  );
+}
+
 export default function Eats({ config }) {
   const eats = config.eats || [];
   return (
@@ -12,7 +23,9 @@ export default function Eats({ config }) {
       {eats.map((e) => (
         <div className="fw-eat" key={e.name}>
           <div className="fw-eattop">
-            <span className="fw-eatname">{e.name}</span>
+            <a className="fw-eatname" href={eatLink(e)} target="_blank" rel="noreferrer">
+              {e.name}
+            </a>
             {e.tag && (
               <span className={"fw-eattag" + (e.tag.startsWith("On-site") ? " onsite" : "")}>
                 {e.tag}

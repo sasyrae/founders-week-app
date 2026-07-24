@@ -109,7 +109,8 @@ html, body { margin: 0; padding: 0; }
 .fw-blocknum{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate);white-space:nowrap}
 .fw-eat{background:var(--card);border:1px solid var(--line);padding:14px 16px;border-radius:2px;margin-bottom:10px}
 .fw-eattop{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
-.fw-eatname{font-weight:700;font-size:16px;letter-spacing:-.2px}
+.fw-eatname{font-weight:700;font-size:16px;letter-spacing:-.2px;color:var(--ink);text-decoration:none;border-bottom:1.5px solid var(--cobalt)}
+a.fw-eatname:hover{color:var(--cobalt)}
 .fw-eattag{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:var(--paper);border:1px solid var(--line);padding:3px 8px;border-radius:999px;color:var(--slate)}
 .fw-eattag.onsite{background:var(--cobalt-soft);border-color:var(--cobalt);color:var(--cobalt)}
 .fw-table{border-top:2px solid var(--ink)}

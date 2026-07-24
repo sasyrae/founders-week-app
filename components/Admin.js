@@ -516,8 +516,14 @@ function Confirmations({ config, attendees, saveConfig, reload, flash }) {
       <label className="fw-label">Subject</label>
       <input className="fw-input" value={subject} onChange={(e) => setSubject(e.target.value)} />
       <label className="fw-label">
-        Email template — placeholders: {"{firstName} {days} {sessions} {hotelNote} {slack}"}
+        Email template — placeholders:{" "}
+        {"{firstName} {days} {sessions} {hotelNote} {slackChannel} {slackUrl} {appUrl}"}
       </label>
+      <p className="fw-p" style={{ fontSize: 13, margin: "0 0 6px" }}>
+        To add a link, write it as <span className="fw-mono">[label](url)</span> — for example{" "}
+        <span className="fw-mono">[open the event app]({"{appUrl}"})</span>. It becomes a real
+        hyperlink in the email.
+      </p>
       <textarea
         className="fw-input"
         rows={14}
@@ -834,6 +840,8 @@ function Settings({ config, saveConfig, flash }) {
     hotelBookingUrl: config.hotelBookingUrl || "",
     hotelBlockTarget: config.hotelBlockTarget ?? 25,
     hotelTeamRooms: config.hotelTeamRooms ?? 9,
+    hotelRateFounder: config.hotelRateFounder ?? 349,
+    hotelRateStandard: config.hotelRateStandard ?? 549,
     days: config.days,
   });
   return (
@@ -889,6 +897,30 @@ function Settings({ config, saveConfig, flash }) {
           />
         </div>
       </div>
+      <div className="fw-grid2">
+        <div>
+          <label className="fw-label">Founder room rate ($/night)</label>
+          <input
+            className="fw-input"
+            type="number"
+            value={f.hotelRateFounder}
+            onChange={(e) => setF({ ...f, hotelRateFounder: Number(e.target.value) })}
+          />
+        </div>
+        <div>
+          <label className="fw-label">LP / Guest / Team rate ($/night)</label>
+          <input
+            className="fw-input"
+            type="number"
+            value={f.hotelRateStandard}
+            onChange={(e) => setF({ ...f, hotelRateStandard: Number(e.target.value) })}
+          />
+        </div>
+      </div>
+      <p className="fw-p" style={{ fontSize: 13, marginTop: 8 }}>
+        These rates appear in the confirmation email — Founders see the founder rate, everyone else
+        sees the standard rate.
+      </p>
       {f.days.map((d, i) => (
         <div className="fw-grid2" key={d.id}>
           <div>
