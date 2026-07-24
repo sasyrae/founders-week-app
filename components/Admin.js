@@ -842,6 +842,7 @@ function Settings({ config, saveConfig, flash }) {
     hotelTeamRooms: config.hotelTeamRooms ?? 9,
     hotelRateFounder: config.hotelRateFounder ?? 349,
     hotelRateStandard: config.hotelRateStandard ?? 549,
+    hotelFounderCode: config.hotelFounderCode || "",
     days: config.days,
   });
   return (
@@ -917,9 +918,17 @@ function Settings({ config, saveConfig, flash }) {
           />
         </div>
       </div>
+      <label className="fw-label">Founder discount code (hotel)</label>
+      <input
+        className="fw-input"
+        value={f.hotelFounderCode}
+        onChange={(e) => setF({ ...f, hotelFounderCode: e.target.value })}
+        placeholder="Paste the code from The William Vale when it arrives"
+      />
       <p className="fw-p" style={{ fontSize: 13, marginTop: 8 }}>
         These rates appear in the confirmation email — Founders see the founder rate, everyone else
-        sees the standard rate.
+        sees the standard rate. If a discount code is set above, Founders (and only Founders) also
+        see “(use code XXXX at booking)” in their email. Leave it blank until the hotel issues it.
       </p>
       {f.days.map((d, i) => (
         <div className="fw-grid2" key={d.id}>
