@@ -70,6 +70,17 @@ export default function App({ initialConfig = null, initialSessions = null }) {
     })();
   }, [loadEvent, initialConfig]);
 
+  // Whenever the view changes (tab switch, or "Register for session" when
+  // not yet registered), jump back to the top — otherwise the new screen
+  // opens scrolled to wherever the last one was, which reads as broken.
+  useEffect(() => {
+    try {
+      window.scrollTo(0, 0);
+    } catch {
+      /* ignore */
+    }
+  }, [view]);
+
   // Toggle a session for the current attendee. Returns the API result so
   // SessionRow can surface access-code / full errors inline.
   const toggleSession = async (sid, accessCode) => {
