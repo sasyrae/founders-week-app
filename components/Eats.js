@@ -1,10 +1,30 @@
 "use client";
 
-/* Each spot links out. If an entry has an explicit `url` we use it;
-   otherwise we link to a Google Maps search for that restaurant in
-   Williamsburg — always accurate, and gives directions/hours/phone. */
+/* Verified official sites for the Good Eats picks. Kept here (rather than
+   in the database) so they apply immediately without a data migration —
+   an entry's own `url` still wins if one is ever set. */
+const EAT_LINKS = {
+  Leuca: "https://www.leuca.com/",
+  "Cafe Mogador": "https://www.cafemogador.com/",
+  "The Commodore": "https://thecommodorebars.com/thecommodore",
+  Wei: "https://www.instagram.com/weis_nyc/?hl=en",
+  "Laser Wolf": "https://www.laserwolfbrooklyn.com/",
+  "Le Crocodile": "https://www.lecrocodile.com/",
+  "Santa Fe BK": "https://santafebk.com/",
+  "Ace's Pizza": "https://acespizzaspot.com/",
+  "Rule of Thirds": "https://www.thirdsbk.com/",
+};
+
+/* Extra practical notes appended to a spot's description. */
+const EAT_NOTES = {
+  Wei: "Walk-ins only — they don't take reservations.",
+};
+
+/* An entry's own url wins; then our verified list; then a Google Maps
+   search as a safe fallback for anything added later. */
 function eatLink(e) {
   if (e.url) return e.url;
+  if (EAT_LINKS[e.name]) return EAT_LINKS[e.name];
   return (
     "https://www.google.com/maps/search/?api=1&query=" +
     encodeURIComponent(`${e.name} Williamsburg Brooklyn`)
@@ -32,9 +52,10 @@ export default function Eats({ config }) {
               </span>
             )}
           </div>
-          {e.note && (
+          {(e.note || EAT_NOTES[e.name]) && (
             <div className="fw-desc" style={{ marginTop: 4 }}>
               {e.note}
+              {EAT_NOTES[e.name] && (e.note ? " " : "") + EAT_NOTES[e.name]}
             </div>
           )}
         </div>
