@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
-import { ensureSeeded, getConfig, getSessions, getSessionCounts, publicSession } from "@/lib/db";
+import {
+  ensureSeeded,
+  getConfig,
+  getSessions,
+  getSessionCounts,
+  getSpeakers,
+  publicSession,
+} from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +21,11 @@ function publicConfig(c) {
 export async function GET() {
   try {
     await ensureSeeded();
-    const [config, sessions, counts] = await Promise.all([
+    const [config, sessions, counts, speakers] = await Promise.all([
       getConfig(),
       getSessions(),
       getSessionCounts(),
+      getSpeakers({ publishedOnly: true }).catch(() => []), // tolerate pre-migration
     ]);
     return NextResponse.json({
       config: publicConfig(config),
@@ -25,6 +33,7 @@ export async function GET() {
         ...publicSession(s),
         taken: s.capacity > 0 ? counts[s.id] || 0 : 0,
       })),
+      speakers,
     });
   } catch (e) {
     return NextResponse.json(

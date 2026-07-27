@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
 import { fmtTime } from "@/lib/utils";
+import SpeakerAvatar from "./SpeakerAvatar";
 
 /* One agenda row. onToggle(accessCode?) is async and returns the API
    result ({ ok, error, code }). Access codes and capacity are enforced
-   server-side; this component just surfaces the outcomes. */
-export default function SessionRow({ s, mine, onToggle, readonly }) {
+   server-side; this component just surfaces the outcomes. speakerMap
+   resolves the session's attached (published) speakers. */
+export default function SessionRow({ s, mine, onToggle, readonly, speakerMap }) {
   const [askCode, setAskCode] = useState(false);
   const [code, setCode] = useState("");
   const [codeErr, setCodeErr] = useState("");
@@ -15,6 +17,9 @@ export default function SessionRow({ s, mine, onToggle, readonly }) {
   const gated = s.gated ?? !!s.accessCode;
   const taken = s.taken ?? 0;
   const full = s.capacity > 0 && taken >= s.capacity && !mine;
+  const linkedSpeakers = (s.speakerIds || [])
+    .map((id) => speakerMap && speakerMap[id])
+    .filter(Boolean);
 
   const doToggle = async (accessCode) => {
     setBusy(true);
@@ -69,7 +74,18 @@ export default function SessionRow({ s, mine, onToggle, readonly }) {
           {full && <span className="fw-full">Full</span>}
         </div>
         <div className="fw-sesstitle">{s.title}</div>
-        {s.speaker && <div className="fw-speaker">{s.speaker}</div>}
+        {linkedSpeakers.length > 0 ? (
+          <div className="fw-spkrow">
+            {linkedSpeakers.map((sp) => (
+              <span className="fw-spkchip" key={sp.id}>
+                <SpeakerAvatar speaker={sp} size={24} />
+                {sp.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          s.speaker && <div className="fw-speaker">{s.speaker}</div>
+        )}
         {s.desc && <div className="fw-desc">{s.desc}</div>}
         <div className="fw-cardfoot">
           <span className="fw-loc">{s.location}</span>

@@ -32,9 +32,25 @@ create table if not exists public.sessions (
   cta         text,
   cta_done    text,
   description  text default '',
-  sort_order  int default 0
+  sort_order  int default 0,
+  speaker_ids jsonb not null default '[]'::jsonb
 );
 create index if not exists sessions_day_idx on public.sessions (day, start_time);
+
+-- Speakers: one row each; `published` gates public visibility.
+create table if not exists public.speakers (
+  id         text primary key,
+  name       text not null,
+  title      text default '',
+  company    text default '',
+  bio        text default '',
+  photo_url  text,
+  link       text,
+  published  boolean not null default false,
+  sort_order int default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists speakers_sort_idx on public.speakers (sort_order, created_at);
 
 -- Attendees: keyed by email. The full attendee object is stored as JSONB
 -- so the app and CSV export see exactly the shape the prototype used.
@@ -67,3 +83,4 @@ alter table public.config        enable row level security;
 alter table public.sessions      enable row level security;
 alter table public.attendees     enable row level security;
 alter table public.announcements enable row level security;
+alter table public.speakers      enable row level security;

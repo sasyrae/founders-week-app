@@ -2,7 +2,7 @@
 import { useState } from "react";
 import SessionRow from "./SessionRow";
 
-export default function Agenda({ config, me, onToggle }) {
+export default function Agenda({ config, me, onToggle, speakerMap }) {
   const [dayId, setDayId] = useState(config.days[0]?.id);
   const day = config.days.find((d) => d.id === dayId) || config.days[0];
   const sessions = config.sessions
@@ -27,6 +27,7 @@ export default function Agenda({ config, me, onToggle }) {
             s={s}
             mine={me?.sessions.includes(s.id)}
             onToggle={(code) => onToggle(s.id, code)}
+            speakerMap={speakerMap}
           />
         ))}
       </div>

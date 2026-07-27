@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "./api";
 import { fmtTime, fmtWhen } from "@/lib/utils";
 import { DEFAULT_SUBJECT, DEFAULT_TEMPLATE, HOTEL_NIGHTS } from "@/lib/constants";
+import SpeakerAvatar from "./SpeakerAvatar";
 
 /* ── host tools root ─────────────────────────────────────────── */
 export default function Admin({ flash, refreshEvent }) {
@@ -14,6 +15,7 @@ export default function Admin({ flash, refreshEvent }) {
   const [sessions, setSessions] = useState([]);
   const [attendees, setAttendees] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
+  const [speakers, setSpeakers] = useState(null); // null = table not migrated yet
 
   useEffect(() => {
     (async () => {
@@ -31,6 +33,7 @@ export default function Admin({ flash, refreshEvent }) {
       setSessions(r.sessions || []);
       setAttendees(r.attendees || []);
       setAnnouncements(r.announcements || []);
+      setSpeakers(r.speakers === undefined ? null : r.speakers); // null if not migrated
     } else if (r.status === 401) {
       setAuthed(false);
     }
@@ -86,6 +89,47 @@ export default function Admin({ flash, refreshEvent }) {
     else flash(r.error || "Couldn't remove.");
   };
 
+  // ── speakers ──
+  const saveSpeaker = async (sp) => {
+    const r = await api.adminSaveSpeaker(sp);
+    if (r.ok) {
+      setSpeakers((prev) => {
+        const list = prev || [];
+        return list.some((x) => x.id === r.speaker.id)
+          ? list.map((x) => (x.id === r.speaker.id ? r.speaker : x))
+          : [...list, r.speaker];
+      });
+      refreshEvent && refreshEvent();
+    } else flash(r.error || "Couldn't save speaker.");
+    return r;
+  };
+
+  const removeSpeaker = async (id) => {
+    const r = await api.adminDeleteSpeaker(id);
+    if (r.ok) {
+      setSpeakers((prev) => (prev || []).filter((x) => x.id !== id));
+      refreshEvent && refreshEvent();
+    } else flash(r.error || "Couldn't delete.");
+  };
+
+  const bulkAddSpeakers = async (list) => {
+    const r = await api.adminBulkSpeakers(list);
+    if (r.ok) {
+      setSpeakers(r.speakers);
+      refreshEvent && refreshEvent();
+    } else flash(r.error || "Couldn't add speakers.");
+    return r;
+  };
+
+  const uploadSpeakerPhoto = async (id, file) => {
+    const r = await api.adminUploadSpeakerPhoto(id, file);
+    if (r.ok) {
+      setSpeakers((prev) => (prev || []).map((x) => (x.id === id ? { ...x, photoUrl: r.photoUrl } : x)));
+      refreshEvent && refreshEvent();
+    } else flash(r.error || "Upload failed.");
+    return r;
+  };
+
   if (authed === null)
     return (
       <main className="fw-main fw-narrow">
@@ -120,6 +164,7 @@ export default function Admin({ flash, refreshEvent }) {
           ["registrants", "Registrants"],
           ["confirm", "Confirmations"],
           ["updates", "Send update"],
+          ["speakers", "Speakers"],
           ["sessions", "Sessions"],
           ["settings", "Settings"],
         ].map(([id, label]) => (
@@ -164,8 +209,24 @@ export default function Admin({ flash, refreshEvent }) {
           flash={flash}
         />
       )}
+      {config && tab === "speakers" && (
+        <SpeakersAdmin
+          speakers={speakers}
+          saveSpeaker={saveSpeaker}
+          removeSpeaker={removeSpeaker}
+          bulkAddSpeakers={bulkAddSpeakers}
+          uploadSpeakerPhoto={uploadSpeakerPhoto}
+          flash={flash}
+        />
+      )}
       {config && tab === "sessions" && (
-        <SessionEditor days={config.days} sessions={sessions} saveSessions={saveSessions} flash={flash} />
+        <SessionEditor
+          days={config.days}
+          sessions={sessions}
+          speakers={speakers}
+          saveSessions={saveSessions}
+          flash={flash}
+        />
       )}
       {config && tab === "settings" && <Settings config={config} saveConfig={saveConfig} flash={flash} />}
     </main>
@@ -645,7 +706,7 @@ function SendUpdate({ config, announcements, setAnnouncements, flash }) {
 }
 
 /* ── session editor ──────────────────────────────────────────── */
-function SessionEditor({ days, sessions, saveSessions, flash }) {
+function SessionEditor({ days, sessions, speakers, saveSessions, flash }) {
   const [editing, setEditing] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -671,6 +732,7 @@ function SessionEditor({ days, sessions, saveSessions, flash }) {
     track: "Founders",
     capacity: 0,
     desc: "",
+    speakerIds: [],
   };
   const save = async () => {
     if (!editing.title.trim()) {
@@ -808,7 +870,37 @@ function SessionEditor({ days, sessions, saveSessions, flash }) {
             value={editing.desc}
             onChange={(e) => setEditing({ ...editing, desc: e.target.value })}
           />
-          <div style={{ display: "flex", gap: 10 }}>
+          {speakers && speakers.length > 0 && (
+            <>
+              <label className="fw-label">Speakers (tap to attach — multiple for panels)</label>
+              <div className="fw-seg" style={{ maxHeight: 200, overflow: "auto" }}>
+                {speakers.map((sp) => {
+                  const on = (editing.speakerIds || []).includes(sp.id);
+                  return (
+                    <button
+                      key={sp.id}
+                      className={on ? "on" : ""}
+                      onClick={() => {
+                        const cur = editing.speakerIds || [];
+                        setEditing({
+                          ...editing,
+                          speakerIds: on ? cur.filter((x) => x !== sp.id) : [...cur, sp.id],
+                        });
+                      }}
+                    >
+                      {sp.name}
+                      {sp.published ? "" : " (draft)"}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="fw-p" style={{ fontSize: 13, marginTop: 6 }}>
+                Attached speakers show on the session once they're published. Add speakers in the
+                Speakers tab.
+              </p>
+            </>
+          )}
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button className="fw-primary" style={{ width: "auto" }} disabled={busy} onClick={save}>
               {busy ? "Saving…" : "Save session"}
             </button>
@@ -985,6 +1077,260 @@ function Settings({ config, saveConfig, flash }) {
       >
         Save settings
       </button>
+    </div>
+  );
+}
+
+/* ── speakers admin ──────────────────────────────────────────── */
+function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, uploadSpeakerPhoto, flash }) {
+  const [editing, setEditing] = useState(null);
+  const [bulk, setBulk] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  if (speakers === null) {
+    return (
+      <div className="fw-narrow2">
+        <h3 className="fw-h2" style={{ fontSize: 20 }}>One-time setup needed</h3>
+        <p className="fw-p">
+          The Speakers feature needs a quick database table added. Run{" "}
+          <span className="fw-mono">db/speakers.sql</span> in your Supabase SQL Editor (same place you
+          ran the first setup), then tap <strong>↻ Refresh</strong> above.
+        </p>
+      </div>
+    );
+  }
+
+  const doBulk = async () => {
+    const list = bulk
+      .split("\n")
+      .map((line) => {
+        const parts = line.split(/\t|,/).map((p) => p.trim());
+        if (!parts[0]) return null;
+        return { name: parts[0], title: parts[1] || "", company: parts[2] || "" };
+      })
+      .filter(Boolean);
+    if (!list.length) {
+      flash("Paste at least one speaker (Name, Title, Company).");
+      return;
+    }
+    setBulkBusy(true);
+    const r = await bulkAddSpeakers(list);
+    setBulkBusy(false);
+    if (r.ok) {
+      setBulk("");
+      flash(`Added ${r.added} speaker${r.added === 1 ? "" : "s"} (as drafts).`);
+    }
+  };
+
+  if (editing) {
+    return (
+      <SpeakerEditor
+        speaker={editing}
+        onClose={() => setEditing(null)}
+        saveSpeaker={saveSpeaker}
+        uploadSpeakerPhoto={uploadSpeakerPhoto}
+        flash={flash}
+      />
+    );
+  }
+
+  return (
+    <div>
+      <button
+        className="fw-primary"
+        style={{ width: "auto", marginBottom: 16 }}
+        onClick={() =>
+          setEditing({ name: "", title: "", company: "", bio: "", link: "", published: false })
+        }
+      >
+        + New speaker
+      </button>
+
+      <div className="fw-cater">
+        <div className="fw-label" style={{ margin: "0 0 8px" }}>
+          Bulk add — one speaker per line: Name, Title, Company
+        </div>
+        <textarea
+          className="fw-input"
+          rows={5}
+          value={bulk}
+          onChange={(e) => setBulk(e.target.value)}
+          placeholder={"Jane Doe, CEO, Acme\nJohn Smith, General Partner, Flybridge"}
+          style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13 }}
+        />
+        <button className="fw-primary" style={{ width: "auto" }} disabled={bulkBusy} onClick={doBulk}>
+          {bulkBusy ? "Adding…" : "Add speakers"}
+        </button>
+        <p className="fw-p" style={{ fontSize: 13, marginTop: 8 }}>
+          Added as unpublished drafts — open each to add a bio and photo, then publish when confirmed.
+        </p>
+      </div>
+
+      <div className="fw-statrow">
+        <Stat n={speakers.length} label="speakers" />
+        <Stat n={speakers.filter((s) => s.published).length} label="published" />
+        <Stat n={speakers.filter((s) => s.photoUrl).length} label="with photo" />
+      </div>
+
+      <div className="fw-roster">
+        {speakers.length === 0 && <p className="fw-p">No speakers yet — add some above.</p>}
+        {speakers.map((s) => (
+          <div className="fw-person" key={s.id} style={{ cursor: "default" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <SpeakerAvatar speaker={s} size={36} />
+              <span>
+                <strong>{s.name}</strong>{" "}
+                <span className="fw-muted">{[s.title, s.company].filter(Boolean).join(" · ")}</span>
+              </span>
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <label className="fw-checkrow" style={{ marginTop: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={s.published}
+                  onChange={(e) => saveSpeaker({ ...s, published: e.target.checked })}
+                />
+                <span className="fw-muted">Published</span>
+              </label>
+              <button className="fw-linkbtn" onClick={() => setEditing(s)}>
+                Edit
+              </button>
+              <button
+                className="fw-del"
+                onClick={() => {
+                  if (window.confirm(`Remove ${s.name}?`)) removeSpeaker(s.id);
+                }}
+              >
+                Remove
+              </button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SpeakerEditor({ speaker, onClose, saveSpeaker, uploadSpeakerPhoto, flash }) {
+  const [f, setF] = useState({ ...speaker });
+  const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  const save = async () => {
+    if (!f.name.trim()) {
+      flash("Name is required.");
+      return;
+    }
+    setBusy(true);
+    const r = await saveSpeaker(f);
+    setBusy(false);
+    if (r.ok) onClose();
+  };
+
+  const onFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    // Uploading needs a saved speaker (an id). Save first if this is new.
+    let id = f.id;
+    if (!id) {
+      if (!f.name.trim()) {
+        flash("Add a name before uploading a photo.");
+        return;
+      }
+      const r = await saveSpeaker(f);
+      if (!r.ok) return;
+      id = r.speaker.id;
+      setF(r.speaker);
+    }
+    setUploading(true);
+    const r = await uploadSpeakerPhoto(id, file);
+    setUploading(false);
+    if (r.ok) setF((prev) => ({ ...prev, id, photoUrl: r.photoUrl }));
+  };
+
+  return (
+    <div className="fw-editor">
+      <div className="fw-dayhead" style={{ padding: "0 0 8px", marginBottom: 14 }}>
+        <span>{f.id ? "Edit speaker" : "New speaker"}</span>
+        <button className="fw-linkbtn" onClick={onClose}>
+          Close
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 14 }}>
+        <SpeakerAvatar speaker={f} size={64} />
+        <div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={onFile}
+          />
+          <button className="fw-add" disabled={uploading} onClick={() => fileRef.current?.click()}>
+            {uploading ? "Uploading…" : f.photoUrl ? "Replace photo" : "Upload photo"}
+          </button>
+          <p className="fw-muted" style={{ marginTop: 6 }}>
+            JPG/PNG/WebP, under 6MB. A monogram shows until you add one.
+          </p>
+        </div>
+      </div>
+
+      <label className="fw-label">Name</label>
+      <input className="fw-input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+      <div className="fw-grid2">
+        <div>
+          <label className="fw-label">Title</label>
+          <input
+            className="fw-input"
+            value={f.title}
+            onChange={(e) => setF({ ...f, title: e.target.value })}
+            placeholder="Co-founder & CEO"
+          />
+        </div>
+        <div>
+          <label className="fw-label">Company</label>
+          <input
+            className="fw-input"
+            value={f.company}
+            onChange={(e) => setF({ ...f, company: e.target.value })}
+          />
+        </div>
+      </div>
+      <label className="fw-label">Bio (optional)</label>
+      <textarea
+        className="fw-input"
+        rows={3}
+        value={f.bio}
+        onChange={(e) => setF({ ...f, bio: e.target.value })}
+      />
+      <label className="fw-label">Link — LinkedIn / X / site (optional)</label>
+      <input
+        className="fw-input"
+        value={f.link}
+        onChange={(e) => setF({ ...f, link: e.target.value })}
+        placeholder="https://…"
+      />
+      <label className="fw-checkrow">
+        <input
+          type="checkbox"
+          checked={f.published}
+          onChange={(e) => setF({ ...f, published: e.target.checked })}
+        />
+        <span>
+          <strong>Published</strong> — visible to attendees on the Speakers page and their sessions
+        </span>
+      </label>
+      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+        <button className="fw-primary" style={{ width: "auto" }} disabled={busy} onClick={save}>
+          {busy ? "Saving…" : "Save speaker"}
+        </button>
+        <button className="fw-linkbtn" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

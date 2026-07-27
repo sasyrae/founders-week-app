@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { api } from "./api";
 import Agenda from "./Agenda";
 import Register from "./Register";
@@ -7,6 +7,7 @@ import MySchedule from "./MySchedule";
 import Welcome from "./Welcome";
 import Updates from "./Updates";
 import Guide from "./Guide";
+import Speakers from "./Speakers";
 import Admin from "./Admin";
 
 const ME_KEY = "fw26_me_email";
@@ -28,6 +29,14 @@ export default function App({ initialConfig = null, initialSessions = null }) {
     setTimeout(() => setBanner(null), 3200);
   };
 
+  // id → speaker, for resolving the speakers attached to each session.
+  const speakerMap = useMemo(() => {
+    const m = {};
+    for (const sp of config?.speakers || []) m[sp.id] = sp;
+    return m;
+  }, [config?.speakers]);
+  const hasSpeakers = (config?.speakers || []).length > 0;
+
   // Keep the signed-in attendee remembered across reloads.
   const setMe = useCallback((next) => {
     setMeState(next);
@@ -41,7 +50,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
 
   const loadEvent = useCallback(async () => {
     const r = await api.loadEvent();
-    if (r.ok) setConfig({ ...r.config, sessions: r.sessions || [] });
+    if (r.ok) setConfig({ ...r.config, sessions: r.sessions || [], speakers: r.speakers || [] });
     else setLoadErr(true);
     return r;
   }, []);
@@ -131,6 +140,11 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           <button className={view === "agenda" ? "on" : ""} onClick={() => setView("agenda")}>
             Agenda
           </button>
+          {hasSpeakers && (
+            <button className={view === "speakers" ? "on" : ""} onClick={() => setView("speakers")}>
+              Speakers
+            </button>
+          )}
           <button className={view === "me" ? "on" : ""} onClick={() => setView("me")}>
             My Schedule{me && me.sessions.length ? ` (${me.sessions.length})` : ""}
           </button>
@@ -160,7 +174,10 @@ export default function App({ initialConfig = null, initialSessions = null }) {
         </div>
       )}
 
-      {view === "agenda" && <Agenda config={config} me={me} onToggle={toggleSession} />}
+      {view === "agenda" && (
+        <Agenda config={config} me={me} onToggle={toggleSession} speakerMap={speakerMap} />
+      )}
+      {view === "speakers" && <Speakers config={config} />}
       {view === "register" && (
         <Register
           config={config}
@@ -188,6 +205,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           onToggle={toggleSession}
           goRegister={() => setView("register")}
           goAgenda={() => setView("agenda")}
+          speakerMap={speakerMap}
         />
       )}
       {view === "welcome" && <Welcome config={config} me={me} goAgenda={() => setView("agenda")} />}

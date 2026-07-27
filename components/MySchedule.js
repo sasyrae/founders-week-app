@@ -1,7 +1,7 @@
 "use client";
 import SessionRow from "./SessionRow";
 
-export default function MySchedule({ config, me, onToggle, goRegister, goAgenda }) {
+export default function MySchedule({ config, me, onToggle, goRegister, goAgenda, speakerMap }) {
   if (!me)
     return (
       <main className="fw-main fw-narrow">
@@ -52,7 +52,13 @@ export default function MySchedule({ config, me, onToggle, goRegister, goAgenda 
               </div>
               <div className="fw-spine">
                 {sessions.map((s) => (
-                  <SessionRow key={s.id} s={s} mine onToggle={(code) => onToggle(s.id, code)} />
+                  <SessionRow
+                    key={s.id}
+                    s={s}
+                    mine
+                    onToggle={(code) => onToggle(s.id, code)}
+                    speakerMap={speakerMap}
+                  />
                 ))}
               </div>
             </div>
