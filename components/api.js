@@ -72,24 +72,33 @@ export const api = {
     jsonFetch("/api/admin/speakers", { method: "POST", body: JSON.stringify({ speakers }) }),
   adminReorderSpeakers: (ids) =>
     jsonFetch("/api/admin/speakers", { method: "PUT", body: JSON.stringify({ ids }) }),
-  adminUploadSpeakerPhoto: async (speakerId, file) => {
-    const fd = new FormData();
-    fd.append("speakerId", speakerId);
-    fd.append("file", file);
-    let res;
-    try {
-      // No Content-Type header — the browser sets the multipart boundary.
-      res = await fetch("/api/admin/speaker/photo", { method: "POST", body: fd });
-    } catch {
-      return { ok: false, error: "Upload failed — check your connection." };
-    }
-    let data = null;
-    try {
-      data = await res.json();
-    } catch {
-      /* no body */
-    }
-    if (!res.ok) return { ok: false, ...(data || {}), error: (data && data.error) || "Upload failed." };
-    return { ok: true, ...(data || {}) };
-  },
+  adminUploadSpeakerPhoto: async (speakerId, file) => uploadForm("/api/admin/speaker/photo", { speakerId }, file),
+
+  // speaker self-service (token-gated)
+  speakerSelfGet: (token) => jsonFetch("/api/speaker/self?token=" + encodeURIComponent(token)),
+  speakerSelfSave: (token, fields) =>
+    jsonFetch("/api/speaker/self", { method: "PUT", body: JSON.stringify({ token, ...fields }) }),
+  speakerSelfUploadPhoto: (token, file) => uploadForm("/api/speaker/self/photo", { token }, file),
 };
+
+/* Shared multipart upload helper — the browser sets the multipart
+   boundary, so we must NOT send a Content-Type header. */
+async function uploadForm(url, fields, file) {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+  fd.append("file", file);
+  let res;
+  try {
+    res = await fetch(url, { method: "POST", body: fd });
+  } catch {
+    return { ok: false, error: "Upload failed — check your connection." };
+  }
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    /* no body */
+  }
+  if (!res.ok) return { ok: false, ...(data || {}), error: (data && data.error) || "Upload failed." };
+  return { ok: true, ...(data || {}) };
+}

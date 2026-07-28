@@ -46,6 +46,7 @@ create table if not exists public.speakers (
   bio        text default '',
   photo_url  text,
   link       text,
+  email      text default '',
   published  boolean not null default false,
   sort_order int default 0,
   created_at timestamptz not null default now()

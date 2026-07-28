@@ -15,11 +15,14 @@ create table if not exists public.speakers (
   bio        text default '',
   photo_url  text,
   link       text,
+  email      text default '',
   published  boolean not null default false,
   sort_order int default 0,
   created_at timestamptz not null default now()
 );
 create index if not exists speakers_sort_idx on public.speakers (sort_order, created_at);
+-- (if the table already existed without it)
+alter table public.speakers add column if not exists email text default '';
 
 -- Sessions can reference any number of speakers (panels). Array of speaker ids.
 alter table public.sessions

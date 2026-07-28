@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAdminRequest } from "@/lib/auth";
+import { isAdminRequest, speakerToken } from "@/lib/auth";
 import { getConfig, getSessions, listAttendees, getAnnouncements, getSpeakers } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,11 @@ export async function GET(req) {
       getAnnouncements(),
       getSpeakers().catch(() => null), // null = speakers table not migrated yet
     ]);
-    return NextResponse.json({ config, sessions, attendees, announcements, speakers });
+    // Attach each speaker's private self-service token (admin-only).
+    const withTokens = Array.isArray(speakers)
+      ? speakers.map((s) => ({ ...s, token: speakerToken(s.id) }))
+      : speakers;
+    return NextResponse.json({ config, sessions, attendees, announcements, speakers: withTokens });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Failed to load." }, { status: 500 });
   }

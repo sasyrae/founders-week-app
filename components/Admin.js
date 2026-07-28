@@ -1100,13 +1100,54 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
     );
   }
 
+  const speakerLink = (s) =>
+    s.token && typeof window !== "undefined"
+      ? `${window.location.origin}/speaker/${s.token}`
+      : "";
+
+  const copyLink = async (s) => {
+    try {
+      await navigator.clipboard.writeText(speakerLink(s));
+      flash(`Copied ${s.name}'s private link.`);
+    } catch {
+      flash("Couldn't copy — long-press the link to copy manually.");
+    }
+  };
+
+  const exportCsv = () => {
+    const head = ["Name", "Email", "Title", "Company", "Published", "Speaker link"];
+    const rows = speakers.map((s) => [
+      s.name,
+      s.email || "",
+      s.title || "",
+      s.company || "",
+      s.published ? "Yes" : "No",
+      speakerLink(s),
+    ]);
+    const csv = [head, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "speaker-links.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    flash("Speaker links CSV downloaded.");
+  };
+
   const doBulk = async () => {
     const list = bulk
       .split("\n")
       .map((line) => {
         const parts = line.split(/\t|,/).map((p) => p.trim());
         if (!parts[0]) return null;
-        return { name: parts[0], title: parts[1] || "", company: parts[2] || "" };
+        return {
+          name: parts[0],
+          title: parts[1] || "",
+          company: parts[2] || "",
+          email: parts[3] || "",
+        };
       })
       .filter(Boolean);
     if (!list.length) {
@@ -1148,14 +1189,14 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
 
       <div className="fw-cater">
         <div className="fw-label" style={{ margin: "0 0 8px" }}>
-          Bulk add — one speaker per line: Name, Title, Company
+          Bulk add — one per line: Name, Title, Company, Email (title/company/email optional)
         </div>
         <textarea
           className="fw-input"
           rows={5}
           value={bulk}
           onChange={(e) => setBulk(e.target.value)}
-          placeholder={"Jane Doe, CEO, Acme\nJohn Smith, General Partner, Flybridge"}
+          placeholder={"Jane Doe, CEO, Acme, jane@acme.com\nJohn Smith, General Partner, Flybridge, john@flybridge.com"}
           style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13 }}
         />
         <button className="fw-primary" style={{ width: "auto" }} disabled={bulkBusy} onClick={doBulk}>
@@ -1170,7 +1211,23 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
         <Stat n={speakers.length} label="speakers" />
         <Stat n={speakers.filter((s) => s.published).length} label="published" />
         <Stat n={speakers.filter((s) => s.photoUrl).length} label="with photo" />
+        {speakers.length > 0 && (
+          <button
+            className="fw-primary"
+            style={{ marginLeft: "auto", width: "auto", marginTop: 0 }}
+            onClick={exportCsv}
+          >
+            Export links CSV
+          </button>
+        )}
       </div>
+      {speakers.length > 0 && (
+        <p className="fw-p" style={{ fontSize: 13, marginTop: -6 }}>
+          Each speaker has a private link to upload their own photo and bio. Use{" "}
+          <strong>Export links CSV</strong> to mail-merge them, or <strong>Copy link</strong> on a
+          single speaker.
+        </p>
+      )}
 
       <div className="fw-roster">
         {speakers.length === 0 && <p className="fw-p">No speakers yet — add some above.</p>}
@@ -1192,6 +1249,9 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
                 />
                 <span className="fw-muted">Published</span>
               </label>
+              <button className="fw-linkbtn" onClick={() => copyLink(s)}>
+                Copy link
+              </button>
               <button className="fw-linkbtn" onClick={() => setEditing(s)}>
                 Edit
               </button>
@@ -1299,6 +1359,13 @@ function SpeakerEditor({ speaker, onClose, saveSpeaker, uploadSpeakerPhoto, flas
           />
         </div>
       </div>
+      <label className="fw-label">Email (for their private edit link — not shown publicly)</label>
+      <input
+        className="fw-input"
+        value={f.email || ""}
+        onChange={(e) => setF({ ...f, email: e.target.value })}
+        placeholder="speaker@company.com"
+      />
       <label className="fw-label">Bio (optional)</label>
       <textarea
         className="fw-input"
