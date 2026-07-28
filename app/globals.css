@@ -141,7 +141,7 @@ a.fw-eatname:hover{color:var(--cobalt)}
 .fw-spkcard{background:var(--card);border:1px solid var(--line);border-radius:2px;padding:18px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .fw-spkname{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.2px;margin-top:4px}
 .fw-spkrole{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate);line-height:1.4}
-.fw-spkbio{font-size:13px;color:var(--slate);line-height:1.5}
+.fw-spkbio{font-size:13px;color:var(--slate);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .fw-spklink{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--cobalt);text-decoration:none;font-weight:600;margin-top:2px}
 .fw-spklink:hover{text-decoration:underline}
 .fw-spkrow{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
