@@ -5,10 +5,9 @@ import { uploadSpeakerPhoto } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const MAX_BYTES = 6 * 1024 * 1024; // 6MB
+const MAX_BYTES = 4 * 1024 * 1024; // 4MB
 
-/* Upload a speaker headshot (multipart form: file + speakerId). Stores it in
-   Supabase Storage and saves the public URL on the speaker. Admin-only. */
+/* Upload a speaker headshot (multipart form: file + speakerId). Admin-only. */
 export async function POST(req) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
@@ -25,10 +24,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "That file isn't an image." }, { status: 400 });
     }
     if (file.size > MAX_BYTES) {
-      return NextResponse.json(
-        { error: "Image is too large — keep it under 6MB." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Image is too large — keep it under 4MB." }, { status: 400 });
     }
     const bytes = Buffer.from(await file.arrayBuffer());
     const photoUrl = await uploadSpeakerPhoto(speakerId, bytes, file.type);

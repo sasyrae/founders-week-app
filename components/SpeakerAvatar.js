@@ -1,7 +1,10 @@
 "use client";
+import Image from "next/image";
 
 /* A speaker's headshot if uploaded, otherwise a monogram of their initials
-   in the app's house style. `size` is in pixels. */
+   in the app's house style. `size` is in pixels. Photos render through
+   next/image so the source can be near print-res while the app serves a
+   small optimized thumbnail. */
 export default function SpeakerAvatar({ speaker, size = 64 }) {
   const initials =
     (speaker.name || "")
@@ -13,13 +16,13 @@ export default function SpeakerAvatar({ speaker, size = 64 }) {
 
   if (speaker.photoUrl) {
     return (
-      <img
+      <Image
         className="fw-spkimg"
         src={speaker.photoUrl}
         alt={speaker.name}
         width={size}
         height={size}
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, objectFit: "cover" }}
       />
     );
   }

@@ -146,7 +146,8 @@ export default function SpeakerSelf({ token }) {
                 {uploading ? "Uploading…" : f.photoUrl ? "Replace photo" : "Upload headshot"}
               </button>
               <p className="fw-muted" style={{ marginTop: 6 }}>
-                JPG/PNG, under 6MB. A monogram shows until you add one.
+                Please upload the highest-resolution headshot you have (JPG/PNG, under 4MB) — we use
+                it in the app and for event signage. A monogram shows until you add one.
               </p>
             </div>
           </div>

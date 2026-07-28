@@ -1112,7 +1112,16 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
   };
 
   const exportCsv = () => {
-    const head = ["First name", "Last name", "Email", "Title", "Company", "Published", "Speaker link"];
+    const head = [
+      "First name",
+      "Last name",
+      "Email",
+      "Title",
+      "Company",
+      "Published",
+      "Speaker link",
+      "Photo (print)",
+    ];
     const rows = speakers.map((s) => [
       s.firstName || "",
       s.lastName || "",
@@ -1121,6 +1130,7 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
       s.company || "",
       s.published ? "Yes" : "No",
       speakerLink(s),
+      s.photoUrl || "",
     ]);
     const csv = [head, ...rows]
       .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
@@ -1342,7 +1352,8 @@ function SpeakerEditor({ speaker, onClose, saveSpeaker, uploadSpeakerPhoto, flas
             {uploading ? "Uploading…" : f.photoUrl ? "Replace photo" : "Upload photo"}
           </button>
           <p className="fw-muted" style={{ marginTop: 6 }}>
-            JPG/PNG/WebP, under 6MB. A monogram shows until you add one.
+            High-res headshot, JPG/PNG, under 4MB — used for the app and event signage. A monogram
+            shows until you add one.
           </p>
         </div>
       </div>
