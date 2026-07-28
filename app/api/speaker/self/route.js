@@ -16,6 +16,9 @@ export async function GET(req) {
     return NextResponse.json({
       speaker: {
         name: sp.name,
+        firstName: sp.firstName,
+        lastName: sp.lastName,
+        email: sp.email,
         title: sp.title,
         company: sp.company,
         bio: sp.bio,

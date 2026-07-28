@@ -3,7 +3,7 @@ import { useState } from "react";
 import { api } from "./api";
 import { DIET_OPTIONS, HOTEL_NIGHTS } from "@/lib/constants";
 
-export default function Register({ config, onDone, existing }) {
+export default function Register({ config, onDone, existing, prefill }) {
   const isEdit = !!existing;
   const [mode, setMode] = useState("new");
   const [f, setF] = useState(
@@ -22,9 +22,9 @@ export default function Register({ config, onDone, existing }) {
           dietaryOther: existing.dietaryOther || "",
         }
       : {
-          firstName: "",
-          lastName: "",
-          email: "",
+          firstName: prefill?.firstName || "",
+          lastName: prefill?.lastName || "",
+          email: prefill?.email || "",
           company: "",
           type: "Founder",
           attending: [],

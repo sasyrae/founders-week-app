@@ -23,6 +23,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
   const [view, setView] = useState("agenda");
   const [banner, setBanner] = useState(null);
   const [loadErr, setLoadErr] = useState(false);
+  const [registerPrefill, setRegisterPrefill] = useState(null);
 
   const flash = (msg) => {
     setBanner(msg);
@@ -59,6 +60,19 @@ export default function App({ initialConfig = null, initialSessions = null }) {
     (async () => {
       // Only fetch on mount if the server didn't already give us the event.
       if (!initialConfig) await loadEvent();
+
+      // Hand-off from a speaker's profile page: open registration pre-filled.
+      try {
+        const raw = sessionStorage.getItem("fw_register_prefill");
+        if (raw) {
+          sessionStorage.removeItem("fw_register_prefill");
+          setRegisterPrefill(JSON.parse(raw));
+          setView("register");
+        }
+      } catch {
+        /* ignore */
+      }
+
       // Re-hydrate "who am I" if we remembered them.
       let saved = null;
       try {
@@ -181,9 +195,11 @@ export default function App({ initialConfig = null, initialSessions = null }) {
       {view === "register" && (
         <Register
           config={config}
+          prefill={registerPrefill}
           onDone={(a) => {
             setMe(a);
             setView("welcome");
+            setRegisterPrefill(null);
           }}
         />
       )}

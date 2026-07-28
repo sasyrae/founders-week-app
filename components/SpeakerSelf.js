@@ -10,6 +10,8 @@ export default function SpeakerSelf({ token }) {
   const [f, setF] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [published, setPublished] = useState(false);
+  const [identity, setIdentity] = useState({ firstName: "", lastName: "", email: "" });
+  const [registered, setRegistered] = useState(null); // null=checking, true/false
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -30,12 +32,35 @@ export default function SpeakerSelf({ token }) {
         });
         setSessions(r.sessions || []);
         setPublished(!!r.speaker.published);
+        setIdentity({
+          firstName: r.speaker.firstName || "",
+          lastName: r.speaker.lastName || "",
+          email: r.speaker.email || "",
+        });
         setState("ready");
+        // Are they already registered for the event?
+        if (r.speaker.email) {
+          const reg = await api.findMe(r.speaker.email);
+          setRegistered(!!reg.ok);
+        } else {
+          setRegistered(false);
+        }
       } else {
         setState("invalid");
       }
     })();
   }, [token]);
+
+  // Hand off pre-fill to the registration form (via sessionStorage, not the
+  // URL — keeps their email out of browser history / logs).
+  const goRegister = () => {
+    try {
+      sessionStorage.setItem("fw_register_prefill", JSON.stringify(identity));
+    } catch {
+      /* ignore */
+    }
+    window.location.href = "/";
+  };
 
   const flash = (m) => {
     setMsg(m);
@@ -181,6 +206,31 @@ export default function SpeakerSelf({ token }) {
           <button className="fw-primary" disabled={busy} onClick={save}>
             {busy ? "Saving…" : "Save my profile"}
           </button>
+
+          <div className="fw-slackcard" style={{ marginTop: 28 }}>
+            <div
+              className="fw-slackglyph"
+              style={{ background: registered ? "var(--green)" : "var(--cobalt)" }}
+            >
+              {registered ? "✓" : "2"}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="fw-sesstitle">
+                {registered ? "You're registered for the event" : "One more step — register for the event"}
+              </div>
+              <p className="fw-p" style={{ margin: "4px 0 10px" }}>
+                {registered
+                  ? "You're on the attendee list — all set. Thank you!"
+                  : "Your profile is only half of it. Register so we have your days, hotel, and dietary needs. We'll pre-fill your name and email so it's quick."}
+              </p>
+              {registered === false && (
+                <button className="fw-primary fw-slackbtn" onClick={goRegister}>
+                  Register for the event →
+                </button>
+              )}
+              {registered === null && <span className="fw-muted">Checking your registration…</span>}
+            </div>
+          </div>
         </main>
       )}
 
