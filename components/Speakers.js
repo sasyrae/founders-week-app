@@ -1,5 +1,6 @@
 "use client";
 import SpeakerAvatar from "./SpeakerAvatar";
+import { profileCta } from "@/lib/utils";
 
 export default function Speakers({ config, onSpeakerClick }) {
   const speakers = config.speakers || [];
@@ -42,7 +43,7 @@ export default function Speakers({ config, onSpeakerClick }) {
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Profile ↗
+                  {profileCta(s.link)} ↗
                 </a>
               )}
             </div>

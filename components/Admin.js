@@ -1409,12 +1409,12 @@ function SpeakerEditor({ speaker, onClose, saveSpeaker, uploadSpeakerPhoto, flas
         value={f.bio}
         onChange={(e) => setF({ ...f, bio: e.target.value })}
       />
-      <label className="fw-label">Link — LinkedIn / X / site (optional)</label>
+      <label className="fw-label">LinkedIn profile (optional)</label>
       <input
         className="fw-input"
         value={f.link}
         onChange={(e) => setF({ ...f, link: e.target.value })}
-        placeholder="https://…"
+        placeholder="https://linkedin.com/in/…"
       />
       <label className="fw-checkrow">
         <input

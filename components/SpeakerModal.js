@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import SpeakerAvatar from "./SpeakerAvatar";
-import { fmtTime } from "@/lib/utils";
+import { fmtTime, profileCta } from "@/lib/utils";
 
 /* A lightweight bio popover for a speaker, opened from a session chip or
    the Speakers page. Shows their details, the sessions they're on, and a
@@ -75,7 +75,7 @@ export default function SpeakerModal({ speaker, sessions, days, onClose }) {
             rel="noreferrer"
             style={{ marginTop: 18 }}
           >
-            View profile ↗
+            {profileCta(speaker.link)} ↗
           </a>
         )}
       </div>

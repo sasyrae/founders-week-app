@@ -184,12 +184,12 @@ export default function SpeakerSelf({ token }) {
             placeholder="A couple of sentences — what you do and why people should say hi."
           />
 
-          <label className="fw-label">Link — LinkedIn / X / your site</label>
+          <label className="fw-label">LinkedIn profile</label>
           <input
             className="fw-input"
             value={f.link}
             onChange={(e) => setF({ ...f, link: e.target.value })}
-            placeholder="https://…"
+            placeholder="https://linkedin.com/in/…"
           />
 
           {sessions.length > 0 && (
