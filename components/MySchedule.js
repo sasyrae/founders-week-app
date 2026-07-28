@@ -1,7 +1,15 @@
 "use client";
 import SessionRow from "./SessionRow";
 
-export default function MySchedule({ config, me, onToggle, goRegister, goAgenda, speakerMap }) {
+export default function MySchedule({
+  config,
+  me,
+  onToggle,
+  goRegister,
+  goAgenda,
+  speakerMap,
+  onSpeakerClick,
+}) {
   if (!me)
     return (
       <main className="fw-main fw-narrow">
@@ -58,6 +66,7 @@ export default function MySchedule({ config, me, onToggle, goRegister, goAgenda,
                     mine
                     onToggle={(code) => onToggle(s.id, code)}
                     speakerMap={speakerMap}
+                    onSpeakerClick={onSpeakerClick}
                   />
                 ))}
               </div>

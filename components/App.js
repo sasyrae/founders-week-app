@@ -8,6 +8,7 @@ import Welcome from "./Welcome";
 import Updates from "./Updates";
 import Guide from "./Guide";
 import Speakers from "./Speakers";
+import SpeakerModal from "./SpeakerModal";
 import Admin from "./Admin";
 
 const ME_KEY = "fw26_me_email";
@@ -24,6 +25,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
   const [banner, setBanner] = useState(null);
   const [loadErr, setLoadErr] = useState(false);
   const [registerPrefill, setRegisterPrefill] = useState(null);
+  const [modalSpeaker, setModalSpeaker] = useState(null);
 
   const flash = (msg) => {
     setBanner(msg);
@@ -189,9 +191,15 @@ export default function App({ initialConfig = null, initialSessions = null }) {
       )}
 
       {view === "agenda" && (
-        <Agenda config={config} me={me} onToggle={toggleSession} speakerMap={speakerMap} />
+        <Agenda
+          config={config}
+          me={me}
+          onToggle={toggleSession}
+          speakerMap={speakerMap}
+          onSpeakerClick={setModalSpeaker}
+        />
       )}
-      {view === "speakers" && <Speakers config={config} />}
+      {view === "speakers" && <Speakers config={config} onSpeakerClick={setModalSpeaker} />}
       {view === "register" && (
         <Register
           config={config}
@@ -222,12 +230,22 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           goRegister={() => setView("register")}
           goAgenda={() => setView("agenda")}
           speakerMap={speakerMap}
+          onSpeakerClick={setModalSpeaker}
         />
       )}
       {view === "welcome" && <Welcome config={config} me={me} goAgenda={() => setView("agenda")} />}
       {view === "updates" && <Updates config={config} />}
       {view === "eats" && <Guide config={config} />}
       {view === "admin" && <Admin flash={flash} refreshEvent={loadEvent} />}
+
+      {modalSpeaker && (
+        <SpeakerModal
+          speaker={modalSpeaker}
+          sessions={config.sessions}
+          days={config.days}
+          onClose={() => setModalSpeaker(null)}
+        />
+      )}
 
       <footer className="fw-foot">
         <span>

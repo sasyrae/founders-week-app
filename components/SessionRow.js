@@ -7,7 +7,7 @@ import SpeakerAvatar from "./SpeakerAvatar";
    result ({ ok, error, code }). Access codes and capacity are enforced
    server-side; this component just surfaces the outcomes. speakerMap
    resolves the session's attached (published) speakers. */
-export default function SessionRow({ s, mine, onToggle, readonly, speakerMap }) {
+export default function SessionRow({ s, mine, onToggle, readonly, speakerMap, onSpeakerClick }) {
   const [askCode, setAskCode] = useState(false);
   const [code, setCode] = useState("");
   const [codeErr, setCodeErr] = useState("");
@@ -76,12 +76,24 @@ export default function SessionRow({ s, mine, onToggle, readonly, speakerMap }) 
         <div className="fw-sesstitle">{s.title}</div>
         {linkedSpeakers.length > 0 ? (
           <div className="fw-spkrow">
-            {linkedSpeakers.map((sp) => (
-              <span className="fw-spkchip" key={sp.id}>
-                <SpeakerAvatar speaker={sp} size={24} />
-                {sp.name}
-              </span>
-            ))}
+            {linkedSpeakers.map((sp) =>
+              onSpeakerClick ? (
+                <button
+                  type="button"
+                  className="fw-spkchip"
+                  key={sp.id}
+                  onClick={() => onSpeakerClick(sp)}
+                >
+                  <SpeakerAvatar speaker={sp} size={24} />
+                  {sp.name}
+                </button>
+              ) : (
+                <span className="fw-spkchip" key={sp.id}>
+                  <SpeakerAvatar speaker={sp} size={24} />
+                  {sp.name}
+                </span>
+              )
+            )}
           </div>
         ) : (
           s.speaker && <div className="fw-speaker">{s.speaker}</div>
