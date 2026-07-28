@@ -1098,18 +1098,24 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
       : "";
 
   const copyLink = async (s) => {
+    const link = speakerLink(s);
+    if (!link) {
+      flash("Link isn't ready — tap ↻ Refresh, then try again.");
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(speakerLink(s));
+      await navigator.clipboard.writeText(link);
       flash(`Copied ${s.name}'s private link.`);
     } catch {
-      flash("Couldn't copy — long-press the link to copy manually.");
+      flash("Couldn't copy automatically — use Export links CSV instead.");
     }
   };
 
   const exportCsv = () => {
-    const head = ["Name", "Email", "Title", "Company", "Published", "Speaker link"];
+    const head = ["First name", "Last name", "Email", "Title", "Company", "Published", "Speaker link"];
     const rows = speakers.map((s) => [
-      s.name,
+      s.firstName || "",
+      s.lastName || "",
       s.email || "",
       s.title || "",
       s.company || "",
@@ -1135,10 +1141,11 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
         const parts = line.split(/\t|,/).map((p) => p.trim());
         if (!parts[0]) return null;
         return {
-          name: parts[0],
-          title: parts[1] || "",
-          company: parts[2] || "",
-          email: parts[3] || "",
+          firstName: parts[0],
+          lastName: parts[1] || "",
+          title: parts[2] || "",
+          company: parts[3] || "",
+          email: parts[4] || "",
         };
       })
       .filter(Boolean);
@@ -1173,7 +1180,16 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
         className="fw-primary"
         style={{ width: "auto", marginBottom: 16 }}
         onClick={() =>
-          setEditing({ name: "", title: "", company: "", bio: "", link: "", published: false })
+          setEditing({
+            firstName: "",
+            lastName: "",
+            title: "",
+            company: "",
+            bio: "",
+            link: "",
+            email: "",
+            published: false,
+          })
         }
       >
         + New speaker
@@ -1181,14 +1197,15 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
 
       <div className="fw-cater">
         <div className="fw-label" style={{ margin: "0 0 8px" }}>
-          Bulk add — one per line: Name, Title, Company, Email (title/company/email optional)
+          Bulk add — one per line: First, Last, Title, Company, Email (last/title/company/email
+          optional)
         </div>
         <textarea
           className="fw-input"
           rows={5}
           value={bulk}
           onChange={(e) => setBulk(e.target.value)}
-          placeholder={"Jane Doe, CEO, Acme, jane@acme.com\nJohn Smith, General Partner, Flybridge, john@flybridge.com"}
+          placeholder={"Jane, Doe, CEO, Acme, jane@acme.com\nJohn, Smith, General Partner, Flybridge, john@flybridge.com"}
           style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13 }}
         />
         <button className="fw-primary" style={{ width: "auto" }} disabled={bulkBusy} onClick={doBulk}>
@@ -1330,8 +1347,24 @@ function SpeakerEditor({ speaker, onClose, saveSpeaker, uploadSpeakerPhoto, flas
         </div>
       </div>
 
-      <label className="fw-label">Name</label>
-      <input className="fw-input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+      <div className="fw-grid2">
+        <div>
+          <label className="fw-label">First name</label>
+          <input
+            className="fw-input"
+            value={f.firstName || ""}
+            onChange={(e) => setF({ ...f, firstName: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="fw-label">Last name</label>
+          <input
+            className="fw-input"
+            value={f.lastName || ""}
+            onChange={(e) => setF({ ...f, lastName: e.target.value })}
+          />
+        </div>
+      </div>
       <div className="fw-grid2">
         <div>
           <label className="fw-label">Title</label>

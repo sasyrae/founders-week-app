@@ -21,8 +21,10 @@ create table if not exists public.speakers (
   created_at timestamptz not null default now()
 );
 create index if not exists speakers_sort_idx on public.speakers (sort_order, created_at);
--- (if the table already existed without it)
+-- (if the table already existed without them)
 alter table public.speakers add column if not exists email text default '';
+alter table public.speakers add column if not exists first_name text default '';
+alter table public.speakers add column if not exists last_name text default '';
 
 -- Sessions can reference any number of speakers (panels). Array of speaker ids.
 alter table public.sessions

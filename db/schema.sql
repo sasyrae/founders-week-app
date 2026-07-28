@@ -41,6 +41,8 @@ create index if not exists sessions_day_idx on public.sessions (day, start_time)
 create table if not exists public.speakers (
   id         text primary key,
   name       text not null,
+  first_name text default '',
+  last_name  text default '',
   title      text default '',
   company    text default '',
   bio        text default '',

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { isAdminRequest } from "@/lib/auth";
+import { isAdminRequest, speakerToken } from "@/lib/auth";
 import { bulkCreateSpeakers, reorderSpeakers, getSpeakers } from "@/lib/db";
 import { uid } from "@/lib/utils";
+
+const withTokens = (list) => list.map((s) => ({ ...s, token: speakerToken(s.id) }));
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +19,17 @@ export async function POST(req) {
   }
   try {
     const incoming = (Array.isArray(body.speakers) ? body.speakers : [])
-      .filter((s) => s && s.name && s.name.trim())
+      .filter((s) => s && ((s.firstName && s.firstName.trim()) || (s.name && s.name.trim())))
       .map((s) => ({
         id: uid(),
-        name: s.name.trim(),
+        firstName: (s.firstName || "").trim(),
+        lastName: (s.lastName || "").trim(),
+        name: (s.name || "").trim(),
         title: (s.title || "").trim(),
         company: (s.company || "").trim(),
         bio: (s.bio || "").trim(),
         link: (s.link || "").trim(),
+        email: (s.email || "").trim(),
         published: !!s.published,
       }));
     if (incoming.length === 0) {
@@ -35,7 +40,7 @@ export async function POST(req) {
     incoming.forEach((s, i) => (s.sortOrder = base + i));
     await bulkCreateSpeakers(incoming);
     const all = await getSpeakers();
-    return NextResponse.json({ added: incoming.length, speakers: all });
+    return NextResponse.json({ added: incoming.length, speakers: withTokens(all) });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Couldn't add speakers." }, { status: 500 });
   }
@@ -54,7 +59,7 @@ export async function PUT(req) {
     const ids = Array.isArray(body.ids) ? body.ids : [];
     await reorderSpeakers(ids);
     const all = await getSpeakers();
-    return NextResponse.json({ speakers: all });
+    return NextResponse.json({ speakers: withTokens(all) });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Couldn't reorder." }, { status: 500 });
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAdminRequest } from "@/lib/auth";
+import { isAdminRequest, speakerToken } from "@/lib/auth";
 import { upsertSpeaker, deleteSpeaker, getSpeakers } from "@/lib/db";
 import { uid } from "@/lib/utils";
 
@@ -16,7 +16,9 @@ export async function POST(req) {
   }
   try {
     const sp = body.speaker || body;
-    if (!sp?.name?.trim()) return NextResponse.json({ error: "Name is required." }, { status: 400 });
+    if (!sp?.firstName?.trim() && !sp?.name?.trim()) {
+      return NextResponse.json({ error: "First name is required." }, { status: 400 });
+    }
     if (!sp.id) {
       sp.id = uid();
       // New speaker sorts to the end.
@@ -24,7 +26,7 @@ export async function POST(req) {
       sp.sortOrder = existing.length;
     }
     const saved = await upsertSpeaker(sp);
-    return NextResponse.json({ speaker: saved });
+    return NextResponse.json({ speaker: { ...saved, token: speakerToken(saved.id) } });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Couldn't save speaker." }, { status: 500 });
   }
