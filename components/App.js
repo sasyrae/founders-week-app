@@ -26,6 +26,15 @@ export default function App({ initialConfig = null, initialSessions = null }) {
   const [loadErr, setLoadErr] = useState(false);
   const [registerPrefill, setRegisterPrefill] = useState(null);
   const [modalSpeaker, setModalSpeaker] = useState(null);
+  const [focusSessionId, setFocusSessionId] = useState(null);
+
+  // Jump to a session on the agenda (from a speaker card/popover), and let
+  // the Agenda scroll to + briefly highlight it.
+  const openSession = (sid) => {
+    setModalSpeaker(null);
+    setFocusSessionId(sid);
+    setView("agenda");
+  };
 
   const flash = (msg) => {
     setBanner(msg);
@@ -197,9 +206,13 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           onToggle={toggleSession}
           speakerMap={speakerMap}
           onSpeakerClick={setModalSpeaker}
+          focusSessionId={focusSessionId}
+          onFocusHandled={() => setFocusSessionId(null)}
         />
       )}
-      {view === "speakers" && <Speakers config={config} onSpeakerClick={setModalSpeaker} />}
+      {view === "speakers" && (
+        <Speakers config={config} onSpeakerClick={setModalSpeaker} onSessionClick={openSession} />
+      )}
       {view === "register" && (
         <Register
           config={config}
@@ -244,6 +257,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           sessions={config.sessions}
           days={config.days}
           onClose={() => setModalSpeaker(null)}
+          onSessionClick={openSession}
         />
       )}
 

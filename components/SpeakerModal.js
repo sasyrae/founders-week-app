@@ -6,7 +6,7 @@ import { fmtTime, profileCta } from "@/lib/utils";
 /* A lightweight bio popover for a speaker, opened from a session chip or
    the Speakers page. Shows their details, the sessions they're on, and a
    profile link. */
-export default function SpeakerModal({ speaker, sessions, days, onClose }) {
+export default function SpeakerModal({ speaker, sessions, days, onClose, onSessionClick }) {
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
@@ -53,17 +53,34 @@ export default function SpeakerModal({ speaker, sessions, days, onClose }) {
             <div className="fw-label" style={{ margin: "6px 0 6px" }}>
               Speaking at
             </div>
-            {theirs.map((s) => (
-              <div className="fw-editrow" key={s.id} style={{ gridTemplateColumns: "76px 1fr" }}>
-                <span className="fw-mono">{fmtTime(s.start)}</span>
-                <span>
-                  <strong>{s.title}</strong>
-                  {dayOf(s.day) && (
-                    <span className="fw-muted"> · {dayOf(s.day).date.split(",")[0]}</span>
-                  )}
-                </span>
-              </div>
-            ))}
+            {theirs.map((s) => {
+              const inner = (
+                <>
+                  <span className="fw-mono">{fmtTime(s.start)}</span>
+                  <span>
+                    <strong>{s.title}</strong>
+                    {dayOf(s.day) && (
+                      <span className="fw-muted"> · {dayOf(s.day).date.split(",")[0]}</span>
+                    )}
+                  </span>
+                </>
+              );
+              return onSessionClick ? (
+                <button
+                  type="button"
+                  key={s.id}
+                  className="fw-editrow fw-sessrowlink"
+                  style={{ gridTemplateColumns: "76px 1fr", width: "100%", textAlign: "left" }}
+                  onClick={() => onSessionClick(s.id)}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div className="fw-editrow" key={s.id} style={{ gridTemplateColumns: "76px 1fr" }}>
+                  {inner}
+                </div>
+              );
+            })}
           </>
         )}
 

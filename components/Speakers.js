@@ -2,7 +2,7 @@
 import SpeakerAvatar from "./SpeakerAvatar";
 import { profileCta } from "@/lib/utils";
 
-export default function Speakers({ config, onSpeakerClick }) {
+export default function Speakers({ config, onSpeakerClick, onSessionClick }) {
   // Alphabetical by last name (then first) for the public lineup.
   const speakers = [...(config.speakers || [])].sort((a, b) => {
     const al = (a.lastName || a.name || "").toLowerCase();
@@ -55,11 +55,25 @@ export default function Speakers({ config, onSpeakerClick }) {
                 {their.length > 0 && (
                   <div className="fw-spksess">
                     <span className="fw-spksesslabel">Speaking</span>
-                    {their.map((x) => (
-                      <div className="fw-spksesstitle" key={x.id}>
-                        {x.title}
-                      </div>
-                    ))}
+                    {their.map((x) =>
+                      onSessionClick ? (
+                        <button
+                          type="button"
+                          className="fw-spksesstitle fw-spksesslink"
+                          key={x.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSessionClick(x.id);
+                          }}
+                        >
+                          {x.title}
+                        </button>
+                      ) : (
+                        <div className="fw-spksesstitle" key={x.id}>
+                          {x.title}
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
                 {s.link && (

@@ -145,6 +145,12 @@ a.fw-eatname:hover{color:var(--cobalt)}
 .fw-spksess{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
 .fw-spksesslabel{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--slate);margin-bottom:2px}
 .fw-spksesstitle{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4}
+button.fw-spksesslink{display:block;width:100%;text-align:left;background:none;border:none;padding:0;font-family:inherit;cursor:pointer}
+button.fw-spksesslink:hover{color:var(--cobalt);text-decoration:underline}
+button.fw-sessrowlink{background:none;border:none;border-bottom:1px solid var(--line);cursor:pointer;font-family:inherit;color:var(--ink)}
+button.fw-sessrowlink:hover{background:var(--paper)}
+.fw-flash .fw-card{animation:fw-flash 1.8s ease}
+@keyframes fw-flash{0%,100%{box-shadow:1px 1px 0 transparent}15%,55%{box-shadow:0 0 0 3px var(--cobalt)}}
 .fw-spklink{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--cobalt);text-decoration:none;font-weight:600;margin-top:2px}
 .fw-spklink:hover{text-decoration:underline}
 .fw-spkrow{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}

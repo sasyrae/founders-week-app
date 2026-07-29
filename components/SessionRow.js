@@ -52,7 +52,7 @@ export default function SessionRow({ s, mine, onToggle, readonly, speakerMap, on
   };
 
   return (
-    <div className={"fw-sess" + (mine ? " mine" : "")}>
+    <div className={"fw-sess" + (mine ? " mine" : "")} id={"fw-session-" + s.id}>
       <div className="fw-time">
         <span>{fmtTime(s.start)}</span>
         <span className="fw-timeend">{fmtTime(s.end)}</span>

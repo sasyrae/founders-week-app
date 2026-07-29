@@ -1,10 +1,37 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SessionRow from "./SessionRow";
 
-export default function Agenda({ config, me, onToggle, speakerMap, onSpeakerClick }) {
+export default function Agenda({
+  config,
+  me,
+  onToggle,
+  speakerMap,
+  onSpeakerClick,
+  focusSessionId,
+  onFocusHandled,
+}) {
   const [dayId, setDayId] = useState(config.days[0]?.id);
   const day = config.days.find((d) => d.id === dayId) || config.days[0];
+
+  // Arriving from a speaker's "Speaking at" link: switch to that session's
+  // day, then scroll to it and flash it so it's easy to find.
+  useEffect(() => {
+    if (!focusSessionId) return;
+    const target = config.sessions.find((s) => s.id === focusSessionId);
+    if (target) setDayId(target.day);
+    const t = setTimeout(() => {
+      const el = document.getElementById("fw-session-" + focusSessionId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("fw-flash");
+        setTimeout(() => el.classList.remove("fw-flash"), 1800);
+      }
+      onFocusHandled && onFocusHandled();
+    }, 80);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSessionId]);
   const sessions = config.sessions
     .filter((s) => s.day === day.id)
     .sort((a, b) => a.start.localeCompare(b.start));
