@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fmtTime } from "@/lib/utils";
 import SpeakerAvatar from "./SpeakerAvatar";
 
@@ -7,8 +7,33 @@ import SpeakerAvatar from "./SpeakerAvatar";
    result ({ ok, error, code }). Access codes and capacity are enforced
    server-side; this component just surfaces the outcomes. speakerMap
    resolves the session's attached (published) speakers. */
-export default function SessionRow({ s, mine, onToggle, readonly, speakerMap, onSpeakerClick }) {
+export default function SessionRow({
+  s,
+  mine,
+  onToggle,
+  readonly,
+  speakerMap,
+  onSpeakerClick,
+  isFocus,
+  onFocusHandled,
+}) {
+  const rootRef = useRef(null);
   const [askCode, setAskCode] = useState(false);
+
+  // When this row is the navigation target (arrived from a speaker's session
+  // link), scroll to it and flash it. Runs once this row is actually mounted,
+  // so the element always exists.
+  useEffect(() => {
+    if (!isFocus) return;
+    const el = rootRef.current;
+    if (!el) return;
+    el.scrollIntoView({ block: "center" });
+    el.classList.add("fw-flash");
+    setTimeout(() => el.classList.remove("fw-flash"), 1800);
+    onFocusHandled && onFocusHandled();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocus]);
+
   const [code, setCode] = useState("");
   const [codeErr, setCodeErr] = useState("");
   const [rowErr, setRowErr] = useState("");
@@ -52,7 +77,7 @@ export default function SessionRow({ s, mine, onToggle, readonly, speakerMap, on
   };
 
   return (
-    <div className={"fw-sess" + (mine ? " mine" : "")} id={"fw-session-" + s.id}>
+    <div className={"fw-sess" + (mine ? " mine" : "")} id={"fw-session-" + s.id} ref={rootRef}>
       <div className="fw-time">
         <span>{fmtTime(s.start)}</span>
         <span className="fw-timeend">{fmtTime(s.end)}</span>
