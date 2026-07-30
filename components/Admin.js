@@ -873,8 +873,14 @@ function SessionEditor({ days, sessions, speakers, saveSessions, flash }) {
           {speakers && speakers.length > 0 && (
             <>
               <label className="fw-label">Speakers (tap to attach — multiple for panels)</label>
-              <div className="fw-seg" style={{ maxHeight: 200, overflow: "auto" }}>
-                {speakers.map((sp) => {
+              <div className="fw-seg" style={{ maxHeight: 240, overflow: "auto" }}>
+                {[...speakers]
+                  .sort((a, b) =>
+                    (a.lastName || a.name || "")
+                      .toLowerCase()
+                      .localeCompare((b.lastName || b.name || "").toLowerCase())
+                  )
+                  .map((sp) => {
                   const on = (editing.speakerIds || []).includes(sp.id);
                   return (
                     <button
