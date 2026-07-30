@@ -108,11 +108,15 @@ export default function App({ initialConfig = null, initialSessions = null }) {
   // not yet registered), jump back to the top — otherwise the new screen
   // opens scrolled to wherever the last one was, which reads as broken.
   useEffect(() => {
+    // Don't jump to top when we're navigating to a specific session — the
+    // Agenda will scroll to that session itself.
+    if (focusSessionId) return;
     try {
       window.scrollTo(0, 0);
     } catch {
       /* ignore */
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
   // Toggle a session for the current attendee. Returns the API result so

@@ -20,16 +20,24 @@ export default function Agenda({
     if (!focusSessionId) return;
     const target = config.sessions.find((s) => s.id === focusSessionId);
     if (target) setDayId(target.day);
-    const t = setTimeout(() => {
-      const el = document.getElementById("fw-session-" + focusSessionId);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("fw-flash");
-        setTimeout(() => el.classList.remove("fw-flash"), 1800);
-      }
-      onFocusHandled && onFocusHandled();
-    }, 80);
-    return () => clearTimeout(t);
+    // Wait two frames so the day switch has rendered + laid out, then scroll
+    // (instant, so nothing can cancel it) and flash the session.
+    let flashTimer;
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.getElementById("fw-session-" + focusSessionId);
+        if (el) {
+          el.scrollIntoView({ block: "center" });
+          el.classList.add("fw-flash");
+          flashTimer = setTimeout(() => el.classList.remove("fw-flash"), 1800);
+        }
+        onFocusHandled && onFocusHandled();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(flashTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusSessionId]);
   const sessions = config.sessions
