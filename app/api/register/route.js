@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getConfig, getSessions, getAttendee, upsertAttendee } from "@/lib/db";
 import { sendConfirmation } from "@/lib/email";
+import { logRegistrationToSheet } from "@/lib/sheet";
 import { validateRegistration } from "@/lib/validate";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +34,14 @@ export async function POST(req) {
     };
     const saved = await upsertAttendee(att);
 
-    // Instant confirmation email via Resend (replaces the prototype's
-    // batch/auto-send). A send failure must NOT block registration.
+    // Instant confirmation email via Resend + optional Google Sheet log,
+    // run together so neither adds serial latency. Neither may block/fail
+    // the registration.
     const sessions = await getSessions();
-    const emailRes = await sendConfirmation({ ...config, _sessions: sessions }, saved);
+    const [emailRes] = await Promise.all([
+      sendConfirmation({ ...config, _sessions: sessions }, saved),
+      logRegistrationToSheet(saved, config),
+    ]);
 
     let finalAtt = saved;
     if (emailRes.sent) {

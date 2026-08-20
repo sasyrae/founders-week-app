@@ -12,5 +12,6 @@ export function GET() {
     resend: !!(process.env.RESEND_API_KEY && process.env.CONFIRM_FROM_EMAIL),
     adminAuth: !!(process.env.ADMIN_PASSWORD && process.env.ADMIN_SESSION_SECRET),
     slack: !!process.env.SLACK_WEBHOOK_URL,
+    sheet: !!process.env.GSHEET_WEBHOOK_URL,
   });
 }
