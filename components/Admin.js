@@ -1277,6 +1277,11 @@ function SpeakersAdmin({ speakers, saveSpeaker, removeSpeaker, bulkAddSpeakers, 
               <button className="fw-linkbtn" onClick={() => copyLink(s)}>
                 Copy link
               </button>
+              {s.photoUrl && (
+                <a className="fw-linkbtn" href={`/api/admin/speaker/photo?id=${encodeURIComponent(s.id)}`}>
+                  Download
+                </a>
+              )}
               <button className="fw-linkbtn" onClick={() => setEditing(s)}>
                 Edit
               </button>
@@ -1357,6 +1362,15 @@ function SpeakerEditor({ speaker, onClose, saveSpeaker, uploadSpeakerPhoto, flas
           <button className="fw-add" disabled={uploading} onClick={() => fileRef.current?.click()}>
             {uploading ? "Uploading…" : f.photoUrl ? "Replace photo" : "Upload photo"}
           </button>
+          {f.photoUrl && f.id && (
+            <a
+              className="fw-linkbtn"
+              href={`/api/admin/speaker/photo?id=${encodeURIComponent(f.id)}`}
+              style={{ marginLeft: 10 }}
+            >
+              Download photo
+            </a>
+          )}
           <p className="fw-muted" style={{ marginTop: 6 }}>
             High-res headshot, JPG/PNG, under 4MB — used for the app and event signage. A monogram
             shows until you add one.
