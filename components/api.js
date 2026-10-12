@@ -74,6 +74,20 @@ export const api = {
     jsonFetch("/api/admin/speakers", { method: "PUT", body: JSON.stringify({ ids }) }),
   adminUploadSpeakerPhoto: async (speakerId, file) => uploadForm("/api/admin/speaker/photo", { speakerId }, file),
 
+  // matchmaking ("Meet people")
+  meetWhoAmI: () => jsonFetch("/api/meet/session"),
+  meetStart: (token) =>
+    jsonFetch("/api/meet/session", { method: "POST", body: JSON.stringify({ token }) }),
+  meetSignOut: () => jsonFetch("/api/meet/session", { method: "DELETE" }),
+  meetGetProfile: () => jsonFetch("/api/meet/profile"),
+  meetSaveProfile: (fields) =>
+    jsonFetch("/api/meet/profile", { method: "PUT", body: JSON.stringify(fields) }),
+  adminMatchImport: (roster, enrichment) =>
+    jsonFetch("/api/admin/match/import", {
+      method: "POST",
+      body: JSON.stringify({ roster, enrichment }),
+    }),
+
   // speaker self-service (token-gated)
   speakerSelfGet: (token) => jsonFetch("/api/speaker/self?token=" + encodeURIComponent(token)),
   speakerSelfSave: (token, fields) =>

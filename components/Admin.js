@@ -166,6 +166,7 @@ export default function Admin({ flash, refreshEvent }) {
           ["updates", "Send update"],
           ["speakers", "Speakers"],
           ["sessions", "Sessions"],
+          ["matching", "Matching"],
           ["settings", "Settings"],
         ].map(([id, label]) => (
           <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
@@ -228,6 +229,7 @@ export default function Admin({ flash, refreshEvent }) {
           flash={flash}
         />
       )}
+      {config && tab === "matching" && <MatchAdmin flash={flash} />}
       {config && tab === "settings" && <Settings config={config} saveConfig={saveConfig} flash={flash} />}
     </main>
   );
@@ -1454,6 +1456,107 @@ function SpeakerEditor({ speaker, onClose, saveSpeaker, uploadSpeakerPhoto, flas
           Cancel
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ── matchmaking admin: import roster + drafts, export personal links ── */
+function MatchAdmin({ flash }) {
+  const [roster, setRoster] = useState(null); // parsed array
+  const [enrichment, setEnrichment] = useState(null); // parsed object
+  const [rosterName, setRosterName] = useState("");
+  const [enrichName, setEnrichName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  const [err, setErr] = useState("");
+
+  const readJson = async (file, kind) => {
+    setErr("");
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (kind === "roster") {
+        const arr = Array.isArray(parsed) ? parsed : parsed.attendees;
+        if (!Array.isArray(arr)) throw new Error("Expected a list of attendees.");
+        setRoster(arr);
+        setRosterName(`${file.name} — ${arr.length} people`);
+      } else {
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("Expected an object keyed by email.");
+        }
+        setEnrichment(parsed);
+        setEnrichName(`${file.name} — ${Object.keys(parsed).length} entries`);
+      }
+    } catch (e) {
+      setErr(`Couldn't read ${kind} file: ${e.message}`);
+    }
+  };
+
+  const doImport = async () => {
+    if (!roster) {
+      setErr("Choose the roster (attendees.json) first.");
+      return;
+    }
+    setBusy(true);
+    setErr("");
+    const r = await api.adminMatchImport(roster, enrichment || {});
+    setBusy(false);
+    if (r.ok) {
+      setResult(r);
+      flash && flash(`Imported ${r.imported} people.`);
+    } else {
+      setErr(r.error || "Import failed.");
+    }
+  };
+
+  return (
+    <div className="fw-editor">
+      <h3 className="fw-h2" style={{ fontSize: 20 }}>Attendee matching</h3>
+      <p className="fw-muted">
+        Import the confirmed roster and the private draft profiles. Attendees stay invisible to each
+        other until they open their link and opt in. The uploaded files are stored privately in the
+        database — drafts are only ever shown to their owner.
+      </p>
+
+      <label className="fw-label">Roster file (attendees.json)</label>
+      <input
+        type="file"
+        accept="application/json,.json"
+        onChange={(e) => e.target.files?.[0] && readJson(e.target.files[0], "roster")}
+      />
+      {rosterName && <p className="fw-muted" style={{ marginTop: 4 }}>{rosterName}</p>}
+
+      <label className="fw-label">Draft profiles file (enrichment.json) — optional</label>
+      <input
+        type="file"
+        accept="application/json,.json"
+        onChange={(e) => e.target.files?.[0] && readJson(e.target.files[0], "enrichment")}
+      />
+      {enrichName && <p className="fw-muted" style={{ marginTop: 4 }}>{enrichName}</p>}
+
+      {err && <p className="fw-err" style={{ marginTop: 12 }}>{err}</p>}
+
+      <button className="fw-add" style={{ marginTop: 16 }} disabled={busy || !roster} onClick={doImport}>
+        {busy ? "Importing…" : "Import to database"}
+      </button>
+
+      {result && (
+        <p className="fw-p" style={{ marginTop: 12 }}>
+          Imported <strong>{result.imported}</strong> people; seeded{" "}
+          <strong>{result.drafted}</strong> draft profiles.
+        </p>
+      )}
+
+      <hr style={{ margin: "22px 0", border: "none", borderTop: "1px solid var(--line)" }} />
+
+      <h3 className="fw-h2" style={{ fontSize: 20 }}>Personal links</h3>
+      <p className="fw-muted">
+        Download a CSV of everyone's personal matchmaking link to mail-merge the invite — or to grab
+        one link to test with. Each link signs that person in, so treat it like a password.
+      </p>
+      <a className="fw-add" href="/api/admin/match/links" style={{ display: "inline-block", marginTop: 8 }}>
+        Download links CSV
+      </a>
     </div>
   );
 }

@@ -10,8 +10,10 @@ import Guide from "./Guide";
 import Speakers from "./Speakers";
 import SpeakerModal from "./SpeakerModal";
 import Admin from "./Admin";
+import Meet from "./Meet";
 
 const ME_KEY = "fw26_me_email";
+const MATCH_ENABLED = process.env.NEXT_PUBLIC_MATCH_ENABLED === "true";
 
 export default function App({ initialConfig = null, initialSessions = null }) {
   // When the server pre-loaded the event, start with it already in state so
@@ -27,6 +29,9 @@ export default function App({ initialConfig = null, initialSessions = null }) {
   const [registerPrefill, setRegisterPrefill] = useState(null);
   const [modalSpeaker, setModalSpeaker] = useState(null);
   const [focusSessionId, setFocusSessionId] = useState(null);
+  // Matchmaking ("Meet people"): the tab shows when the feature is enabled,
+  // when opened via a personal link (?m=token), or with ?meet=1 for preview.
+  const [meetOn, setMeetOn] = useState(MATCH_ENABLED);
 
   // Jump to a session on the agenda (from a speaker card/popover), and let
   // the Agenda scroll to + briefly highlight it.
@@ -100,6 +105,31 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           } catch {
             /* ignore */
           }
+      }
+
+      // Matchmaking identity: a personal link carries ?m=<token>. Exchange it
+      // for the signed identity cookie, then strip it from the URL so it isn't
+      // left in history. Otherwise, reveal the tab if already signed in.
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const mtok = params.get("m");
+        const wantMeet = params.get("meet") === "1";
+        if (mtok) {
+          const r = await api.meetStart(mtok);
+          if (r.ok) {
+            setMeetOn(true);
+            setView("meet");
+          }
+          params.delete("m");
+          const qs = params.toString();
+          window.history.replaceState({}, "", window.location.pathname + (qs ? "?" + qs : ""));
+        } else if (MATCH_ENABLED || wantMeet) {
+          setMeetOn(true);
+          const r = await api.meetWhoAmI();
+          if (r.ok && r.identity) setMeetOn(true);
+        }
+      } catch {
+        /* ignore */
       }
     })();
   }, [loadEvent, initialConfig]);
@@ -183,6 +213,11 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           <button className={view === "eats" ? "on" : ""} onClick={() => setView("eats")}>
             Neighborhood Guide
           </button>
+          {meetOn && (
+            <button className={view === "meet" ? "on" : ""} onClick={() => setView("meet")}>
+              Meet People
+            </button>
+          )}
           {!me && (
             <button className={view === "register" ? "on" : ""} onClick={() => setView("register")}>
               Register
@@ -253,6 +288,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
       {view === "welcome" && <Welcome config={config} me={me} goAgenda={() => setView("agenda")} />}
       {view === "updates" && <Updates config={config} />}
       {view === "eats" && <Guide config={config} />}
+      {view === "meet" && <Meet flash={flash} />}
       {view === "admin" && <Admin flash={flash} refreshEvent={loadEvent} />}
 
       {modalSpeaker && (
