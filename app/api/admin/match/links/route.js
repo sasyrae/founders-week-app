@@ -10,7 +10,12 @@ export const dynamic = "force-dynamic";
 export async function GET(req) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+    // Use the origin the admin is actually on, so links downloaded from the
+    // preview open on the preview (and links downloaded from production open
+    // on production at launch). Falls back to the configured site URL.
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+    const proto = req.headers.get("x-forwarded-proto") || "https";
+    const origin = host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
     const people = (await listAttendees()).filter((a) => a.roster || a.email);
     const rows = [["first_name", "last_name", "email", "company", "personal_link"]];
     for (const a of people) {
