@@ -27,3 +27,6 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# Local-only attendee data (PII — never commit)
+/data/
