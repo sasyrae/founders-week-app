@@ -178,3 +178,5 @@ button.fw-spkchip:hover{border-color:var(--ink);background:#fff}
   .fw-card{transition:box-shadow .15s ease,border-color .15s ease}
   .fw-add{transition:background .12s ease,color .12s ease}
 }
+
+.fw-matchcard{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}

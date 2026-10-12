@@ -1469,6 +1469,20 @@ function MatchAdmin({ flash }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [err, setErr] = useState("");
+  const [working, setWorking] = useState("");
+
+  const run = async (label, fn) => {
+    setWorking(label);
+    setErr("");
+    const r = await fn();
+    setWorking("");
+    if (r.ok) {
+      flash && flash(r.message || "Done.");
+      return r;
+    }
+    setErr(r.error || "Something went wrong.");
+    return r;
+  };
 
   const readJson = async (file, kind) => {
     setErr("");
@@ -1557,6 +1571,62 @@ function MatchAdmin({ flash }) {
       <a className="fw-add" href="/api/admin/match/links" style={{ display: "inline-block", marginTop: 8 }}>
         Download links CSV
       </a>
+
+      <hr style={{ margin: "22px 0", border: "none", borderTop: "1px solid var(--line)" }} />
+
+      <h3 className="fw-h2" style={{ fontSize: 20 }}>Matches</h3>
+      <p className="fw-muted">
+        Matches recompute automatically when someone opts in or edits their profile. Use this after
+        a batch of new opt-ins to refresh everyone at once. (Needs the ANTHROPIC_API_KEY env var for
+        AI-written reasons; without it, matches still work using tag scoring.)
+      </p>
+      <button
+        className="fw-add"
+        disabled={!!working}
+        onClick={() =>
+          run("recompute", async () => {
+            const r = await api.adminMatchRecompute();
+            return r.ok ? { ...r, message: `Recomputed ${r.recomputed}/${r.people}.` } : r;
+          })
+        }
+      >
+        {working === "recompute" ? "Recomputing…" : "Recompute all matches"}
+      </button>
+
+      <hr style={{ margin: "22px 0", border: "none", borderTop: "1px solid var(--line)" }} />
+
+      <h3 className="fw-h2" style={{ fontSize: 20 }}>Sample profiles (testing)</h3>
+      <p className="fw-muted">
+        Add six clearly-fake <code>@example.com</code> opted-in profiles so you can see matching in
+        action, then remove them before launch. They live in the database until you remove them, but
+        stay invisible to attendees (no directory yet, and they only appear in your own matches).
+      </p>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          className="fw-add"
+          disabled={!!working}
+          onClick={() =>
+            run("add", async () => {
+              const r = await api.adminMatchTest("add");
+              return r.ok ? { ...r, message: `Added ${r.added} sample profiles.` } : r;
+            })
+          }
+        >
+          {working === "add" ? "Adding…" : "Add sample profiles"}
+        </button>
+        <button
+          className="fw-del"
+          disabled={!!working}
+          onClick={() =>
+            run("remove", async () => {
+              const r = await api.adminMatchTest("remove");
+              return r.ok ? { ...r, message: `Removed ${r.removed} sample profiles.` } : r;
+            })
+          }
+        >
+          {working === "remove" ? "Removing…" : "Remove sample profiles"}
+        </button>
+      </div>
     </div>
   );
 }

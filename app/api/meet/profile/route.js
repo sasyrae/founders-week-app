@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { meetEmailFromRequest } from "@/lib/auth";
 import { getMatchMe, saveMatchProfile } from "@/lib/db";
+import { recomputeMatchesFor } from "@/lib/matchCompute";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,13 @@ export async function PUT(req) {
       canHelpWith: body.canHelpWith,
       optedIn: body.optedIn,
     });
+    // Refresh my matches on every save (approve or edit). Never blocks the
+    // save itself — a compute hiccup just leaves the prior matches in place.
+    try {
+      await recomputeMatchesFor(email);
+    } catch {
+      /* ignore */
+    }
     return NextResponse.json({ profile });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Couldn't save your profile." }, { status: 500 });

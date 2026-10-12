@@ -18,6 +18,7 @@ export default function Meet({ flash }) {
   const [optedIn, setOptedIn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [matches, setMatches] = useState(null); // null = not loaded yet
 
   useEffect(() => {
     (async () => {
@@ -36,6 +37,7 @@ export default function Meet({ flash }) {
           !p && !!((d.workingOn && d.workingOn.trim()) || d.lookingFor.length || d.canHelpWith.length)
         );
         setState("ready");
+        if (p && p.optedIn) loadMatches();
       } else if (r.status === 401) {
         setState("anon");
       } else if (r.status === 404) {
@@ -46,6 +48,11 @@ export default function Meet({ flash }) {
       }
     })();
   }, []);
+
+  const loadMatches = async () => {
+    const r = await api.meetGetMatches();
+    if (r.ok) setMatches(r.items || []);
+  };
 
   const toggle = (list, setList, tag) =>
     setList(list.includes(tag) ? list.filter((t) => t !== tag) : [...list, tag]);
@@ -65,6 +72,8 @@ export default function Meet({ flash }) {
       setHadProfile(true);
       setSeededDraft(false);
       flash && flash(nextOptedIn ? "You're in — thanks! You can edit anytime." : "Saved.");
+      if (nextOptedIn) loadMatches();
+      else setMatches(null);
     } else {
       setErr(r.error || "Couldn't save — try again.");
     }
@@ -169,6 +178,37 @@ export default function Meet({ flash }) {
         <button className="fw-primary" disabled={busy} onClick={() => save(true)}>
           {busy ? "Saving…" : "Approve & opt in"}
         </button>
+      )}
+
+      {optedIn && (
+        <section style={{ marginTop: 34 }}>
+          <h3 className="fw-h2" style={{ fontSize: 22 }}>People worth meeting</h3>
+          {matches === null ? (
+            <p className="fw-muted">Finding your matches…</p>
+          ) : matches.length === 0 ? (
+            <p className="fw-muted">
+              No suggestions yet — check back as more people opt in. Your matches refresh whenever
+              you edit your profile.
+            </p>
+          ) : (
+            <div style={{ display: "grid", gap: 12, marginTop: 8 }}>
+              {matches.map((m) => (
+                <div key={m.id} className="fw-matchcard">
+                  <strong>{m.name}</strong>
+                  <div className="fw-muted" style={{ fontSize: 13 }}>
+                    {[m.type, m.company].filter(Boolean).join(" · ")}
+                  </div>
+                  {m.workingOn && <p className="fw-p" style={{ margin: "6px 0 0" }}>{m.workingOn}</p>}
+                  {m.reason && (
+                    <p className="fw-p" style={{ margin: "8px 0 0", color: "var(--cobalt)" }}>
+                      {m.reason}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
     </main>
   );

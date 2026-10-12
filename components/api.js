@@ -82,11 +82,15 @@ export const api = {
   meetGetProfile: () => jsonFetch("/api/meet/profile"),
   meetSaveProfile: (fields) =>
     jsonFetch("/api/meet/profile", { method: "PUT", body: JSON.stringify(fields) }),
+  meetGetMatches: () => jsonFetch("/api/meet/matches"),
   adminMatchImport: (roster, enrichment) =>
     jsonFetch("/api/admin/match/import", {
       method: "POST",
       body: JSON.stringify({ roster, enrichment }),
     }),
+  adminMatchRecompute: () => jsonFetch("/api/admin/match/recompute", { method: "POST" }),
+  adminMatchTest: (action) =>
+    jsonFetch("/api/admin/match/test", { method: "POST", body: JSON.stringify({ action }) }),
 
   // speaker self-service (token-gated)
   speakerSelfGet: (token) => jsonFetch("/api/speaker/self?token=" + encodeURIComponent(token)),
