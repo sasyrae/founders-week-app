@@ -182,3 +182,5 @@ button.fw-spkchip:hover{border-color:var(--ink);background:#fff}
 .fw-matchcard{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .fw-connectbox{background:var(--green-soft);border:1px solid var(--green);border-radius:6px;padding:8px 10px;font-size:14px}
 .fw-connectbox a{color:var(--green);font-weight:600}
+.fw-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.fw-dot.amber{background:var(--amber)}

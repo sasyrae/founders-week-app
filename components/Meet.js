@@ -34,7 +34,7 @@ export default function Meet({ flash, onPendingChange }) {
         setWorkingOn(base.workingOn || "");
         setLookingFor(base.lookingFor || []);
         setCanHelp(base.canHelpWith || []);
-        setLinkedin((p && p.linkedin) || "");
+        setLinkedin(r.linkedin || (p && p.linkedin) || "");
         setOptedIn(!!(p && p.optedIn));
         setEditorOpen(!(p && p.optedIn)); // open when they still need to opt in
         setSeededDraft(
@@ -270,20 +270,15 @@ function MatchCard({ m, onRequested, flash }) {
 
       <div style={{ marginTop: 12 }}>
         {m.requestStatus === "accepted" && m.contact ? (
-          <div className="fw-connectbox">
-            <strong>You're connected.</strong>{" "}
-            <a href={`mailto:${m.contact.email}`}>{m.contact.email}</a>
-            {m.contact.linkedin && (
-              <>
-                {" · "}
-                <a href={m.contact.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
-              </>
-            )}
-          </div>
+          <ContactBox contact={m.contact} />
         ) : m.requestStatus === "pending" && m.requestDir === "received" ? (
-          <p className="fw-muted">Asked to meet you — see “Requests to meet you” above.</p>
+          <p className="fw-muted">
+            <span className="fw-dot amber" /> Asked to meet you — see “Requests to meet you” above.
+          </p>
         ) : m.requestStatus === "pending" ? (
-          <p className="fw-muted">Request sent — waiting for them to accept.</p>
+          <p className="fw-muted">
+            <span className="fw-dot amber" /> Pending — waiting for them to accept.
+          </p>
         ) : m.requestStatus === "declined" ? (
           <p className="fw-muted">Not connected.</p>
         ) : noteOpen ? (
@@ -337,14 +332,8 @@ function ConnectedList({ requests }) {
             <div className="fw-muted" style={{ fontSize: 13 }}>
               {[r.type, r.company].filter(Boolean).join(" · ")}
             </div>
-            <div className="fw-connectbox" style={{ marginTop: 8 }}>
-              <a href={`mailto:${r.contact.email}`}>{r.contact.email}</a>
-              {r.contact.linkedin && (
-                <>
-                  {" · "}
-                  <a href={r.contact.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
-                </>
-              )}
+            <div style={{ marginTop: 8 }}>
+              <ContactBox contact={r.contact} />
             </div>
           </div>
         ))}
@@ -411,6 +400,28 @@ function ProfileEditor({
         <button className="fw-primary" disabled={busy} onClick={() => save(true)}>
           {busy ? "Saving…" : "Approve & opt in"}
         </button>
+      )}
+    </div>
+  );
+}
+
+function ContactBox({ contact }) {
+  return (
+    <div className="fw-connectbox">
+      <strong>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: "-3px", marginRight: 6 }}>
+          <circle cx="8" cy="8" r="8" fill="var(--green)" />
+          <path d="M4.3 8.2l2.3 2.3 5-5.2" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        You're Connected
+      </strong>
+      <div style={{ marginTop: 8 }}>
+        Send a message: <a href={`mailto:${contact.email}`}>{contact.email}</a>
+      </div>
+      {contact.linkedin && (
+        <div style={{ marginTop: 4 }}>
+          <a href={contact.linkedin} target="_blank" rel="noreferrer">Connect on LinkedIn</a>
+        </div>
       )}
     </div>
   );
