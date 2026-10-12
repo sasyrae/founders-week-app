@@ -83,6 +83,11 @@ export const api = {
   meetSaveProfile: (fields) =>
     jsonFetch("/api/meet/profile", { method: "PUT", body: JSON.stringify(fields) }),
   meetGetMatches: () => jsonFetch("/api/meet/matches"),
+  meetGetRequests: () => jsonFetch("/api/meet/requests"),
+  meetRequest: (toId, note) =>
+    jsonFetch("/api/meet/request", { method: "POST", body: JSON.stringify({ toId, note }) }),
+  meetRespond: (requestId, action) =>
+    jsonFetch("/api/meet/request/respond", { method: "POST", body: JSON.stringify({ requestId, action }) }),
   adminMatchImport: (roster, enrichment) =>
     jsonFetch("/api/admin/match/import", {
       method: "POST",

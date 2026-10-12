@@ -40,6 +40,7 @@ export async function PUT(req) {
       workingOn: body.workingOn,
       lookingFor: body.lookingFor,
       canHelpWith: body.canHelpWith,
+      linkedin: body.linkedin,
       optedIn: body.optedIn,
     });
     // Refresh my matches on every save (approve or edit). Never blocks the

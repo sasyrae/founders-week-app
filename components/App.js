@@ -32,6 +32,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
   // Matchmaking ("Meet people"): the tab shows when the feature is enabled,
   // when opened via a personal link (?m=token), or with ?meet=1 for preview.
   const [meetOn, setMeetOn] = useState(MATCH_ENABLED);
+  const [pendingMeet, setPendingMeet] = useState(0); // incoming meet requests awaiting me
 
   // Jump to a session on the agenda (from a speaker card/popover), and let
   // the Agenda scroll to + briefly highlight it.
@@ -119,6 +120,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           if (r.ok) {
             setMeetOn(true);
             setView("meet");
+            api.meetGetRequests().then((rq) => rq.ok && setPendingMeet(rq.pendingIncoming || 0));
           }
           params.delete("m");
           const qs = params.toString();
@@ -126,7 +128,10 @@ export default function App({ initialConfig = null, initialSessions = null }) {
         } else if (MATCH_ENABLED || wantMeet) {
           setMeetOn(true);
           const r = await api.meetWhoAmI();
-          if (r.ok && r.identity) setMeetOn(true);
+          if (r.ok && r.identity) {
+            setMeetOn(true);
+            api.meetGetRequests().then((rq) => rq.ok && setPendingMeet(rq.pendingIncoming || 0));
+          }
         }
       } catch {
         /* ignore */
@@ -215,7 +220,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           </button>
           {meetOn && (
             <button className={view === "meet" ? "on" : ""} onClick={() => setView("meet")}>
-              Meet People
+              Meet People{pendingMeet ? ` (${pendingMeet})` : ""}
             </button>
           )}
           {!me && (
@@ -288,7 +293,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
       {view === "welcome" && <Welcome config={config} me={me} goAgenda={() => setView("agenda")} />}
       {view === "updates" && <Updates config={config} />}
       {view === "eats" && <Guide config={config} />}
-      {view === "meet" && <Meet flash={flash} />}
+      {view === "meet" && <Meet flash={flash} onPendingChange={setPendingMeet} />}
       {view === "admin" && <Admin flash={flash} refreshEvent={loadEvent} />}
 
       {modalSpeaker && (
