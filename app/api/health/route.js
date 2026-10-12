@@ -13,5 +13,6 @@ export function GET() {
     adminAuth: !!(process.env.ADMIN_PASSWORD && process.env.ADMIN_SESSION_SECRET),
     slack: !!process.env.SLACK_WEBHOOK_URL,
     sheet: !!process.env.GSHEET_WEBHOOK_URL,
+    ai: !!process.env.ANTHROPIC_API_KEY,
   });
 }
