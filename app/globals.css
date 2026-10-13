@@ -187,3 +187,5 @@ button.fw-spkchip:hover{border-color:var(--ink);background:#fff}
 .fw-seg{display:flex;gap:8px}
 .fw-seg button{flex:1;font:inherit;font-weight:600;font-size:14px;padding:9px 12px;border:1px solid var(--line);background:var(--card);border-radius:999px;cursor:pointer;color:var(--slate)}
 .fw-seg button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.fw-curatedtag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--cobalt);background:var(--cobalt-soft);padding:3px 8px;border-radius:999px;margin-bottom:8px}
+.fw-matchcard.curated{border-color:var(--cobalt)}

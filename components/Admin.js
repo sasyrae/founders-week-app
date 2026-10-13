@@ -1470,6 +1470,44 @@ function MatchAdmin({ flash }) {
   const [result, setResult] = useState(null);
   const [err, setErr] = useState("");
   const [working, setWorking] = useState("");
+  const [overview, setOverview] = useState(null);
+  const [ia, setIa] = useState("");
+  const [ib, setIb] = useState("");
+  const [ireason, setIreason] = useState("");
+
+  const loadOverview = async () => {
+    const r = await api.adminMatchOverview();
+    if (r.ok) setOverview(r);
+  };
+  useEffect(() => {
+    loadOverview();
+  }, []);
+
+  const createIntro = async () => {
+    if (!ia || !ib || ia === ib) {
+      flash("Pick two different people.");
+      return;
+    }
+    if (!ireason.trim()) {
+      flash("Add a reason for the intro.");
+      return;
+    }
+    const r = await api.adminMatchIntro(ia, ib, ireason.trim());
+    if (r.ok) {
+      setIa("");
+      setIb("");
+      setIreason("");
+      flash("Intro created — both will see it.");
+      loadOverview();
+    } else flash(r.error || "Couldn't create the intro.");
+  };
+  const removeIntro = async (id) => {
+    const r = await api.adminMatchIntroRemove(id);
+    if (r.ok) {
+      flash("Intro removed.");
+      loadOverview();
+    } else flash(r.error || "Couldn't remove the intro.");
+  };
 
   const run = async (label, fn) => {
     setWorking(label);
@@ -1525,6 +1563,91 @@ function MatchAdmin({ flash }) {
 
   return (
     <div className="fw-editor">
+      {overview && (
+        <>
+          <h3 className="fw-h2" style={{ fontSize: 20 }}>Overview</h3>
+          <div className="fw-statrow">
+            <Stat n={overview.optInRate + "%"} label="opt-in rate" />
+            <Stat n={overview.optedInCount} label="opted in" />
+            <Stat n={overview.rosterCount} label="on roster" />
+            <Stat n={overview.noMatch.length} label="no matches yet" />
+          </div>
+          {overview.noMatch.length > 0 && (
+            <p className="fw-muted" style={{ marginTop: -6, marginBottom: 10 }}>
+              No matches yet: {overview.noMatch.join(", ")}
+            </p>
+          )}
+
+          <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 20 }}>Flybridge-curated intros</h3>
+          <p className="fw-muted">
+            Pick two opted-in people; both see “The Flybridge team thinks you two should meet” with
+            your note.
+          </p>
+          <div className="fw-grid2">
+            <div>
+              <label className="fw-label">Person A</label>
+              <select className="fw-input" value={ia} onChange={(e) => setIa(e.target.value)}>
+                <option value="">Choose…</option>
+                {overview.optedInPeople.map((p) => (
+                  <option key={p.email} value={p.email}>{p.name} · {p.type}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="fw-label">Person B</label>
+              <select className="fw-input" value={ib} onChange={(e) => setIb(e.target.value)}>
+                <option value="">Choose…</option>
+                {overview.optedInPeople.map((p) => (
+                  <option key={p.email} value={p.email}>{p.name} · {p.type}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <label className="fw-label">Why they should meet</label>
+          <textarea
+            className="fw-input"
+            rows={2}
+            maxLength={400}
+            value={ireason}
+            onChange={(e) => setIreason(e.target.value)}
+            placeholder="One or two sentences — shown to both of them."
+          />
+          <button className="fw-add" style={{ marginTop: 10 }} onClick={createIntro}>Create intro</button>
+
+          {overview.curatedIntros.length > 0 && (
+            <div className="fw-roster" style={{ marginTop: 14 }}>
+              {overview.curatedIntros.map((c) => (
+                <div key={c.id} className="fw-person" style={{ cursor: "default" }}>
+                  <span>
+                    <strong>{c.a}</strong> ↔ <strong>{c.b}</strong>{" "}
+                    <span className="fw-muted">— {c.reason}</span>
+                  </span>
+                  <button className="fw-del" onClick={() => removeIntro(c.id)}>Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 20 }}>
+            Meeting requests ({overview.requests.length})
+          </h3>
+          {overview.requests.length === 0 ? (
+            <p className="fw-muted">No requests yet.</p>
+          ) : (
+            <div className="fw-roster" style={{ marginTop: 6 }}>
+              {overview.requests.map((r, i) => (
+                <div key={i} className="fw-person" style={{ cursor: "default" }}>
+                  <span>{r.from} <span className="fw-muted">→</span> {r.to}</span>
+                  <span className="fw-checkpill" style={{ textTransform: "capitalize" }}>{r.status}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid var(--line)" }} />
+        </>
+      )}
+
       <h3 className="fw-h2" style={{ fontSize: 20 }}>Attendee matching</h3>
       <p className="fw-muted">
         Import the confirmed roster and the private draft profiles. Attendees stay invisible to each

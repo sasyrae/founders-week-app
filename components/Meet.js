@@ -288,7 +288,10 @@ function MatchCard({ m, onRequested, flash }) {
   };
 
   return (
-    <div className="fw-matchcard">
+    <div className={"fw-matchcard" + (m.curated ? " curated" : "")}>
+      {m.curated && (
+        <div className="fw-curatedtag">★ The Flybridge team thinks you two should meet</div>
+      )}
       <strong>{m.name}</strong>
       <div className="fw-muted" style={{ fontSize: 13 }}>
         {[m.type, m.company].filter(Boolean).join(" · ")}

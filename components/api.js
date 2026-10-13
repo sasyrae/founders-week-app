@@ -95,6 +95,11 @@ export const api = {
       body: JSON.stringify({ roster, enrichment }),
     }),
   adminMatchRecompute: () => jsonFetch("/api/admin/match/recompute", { method: "POST" }),
+  adminMatchOverview: () => jsonFetch("/api/admin/match/overview"),
+  adminMatchIntro: (aEmail, bEmail, reason) =>
+    jsonFetch("/api/admin/match/intro", { method: "POST", body: JSON.stringify({ aEmail, bEmail, reason }) }),
+  adminMatchIntroRemove: (id) =>
+    jsonFetch("/api/admin/match/intro?id=" + encodeURIComponent(id), { method: "DELETE" }),
   adminMatchTest: (action) =>
     jsonFetch("/api/admin/match/test", { method: "POST", body: JSON.stringify({ action }) }),
 
