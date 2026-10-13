@@ -129,17 +129,7 @@ export default function Meet({ flash, onPendingChange }) {
       </main>
     );
 
-  if (state === "anon") return <AnonGate />;
-
-  if (state === "missing")
-    return (
-      <main className="fw-main fw-narrow">
-        <h2 className="fw-h2">Meet people</h2>
-        <p className="fw-p">
-          We couldn't find your registration yet. Reply to our email and we'll get you set up.
-        </p>
-      </main>
-    );
+  if (state === "anon" || state === "missing") return <AnonGate missing={state === "missing"} />;
 
   if (state === "error")
     return (
@@ -493,7 +483,7 @@ function ProfileEditor({
   );
 }
 
-function AnonGate() {
+function AnonGate({ missing }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState("");
   const [busy, setBusy] = useState(false);
@@ -511,8 +501,9 @@ function AnonGate() {
     <main className="fw-main fw-narrow">
       <h2 className="fw-h2">Meet people</h2>
       <p className="fw-p">
-        Set up your profile and get suggested intros to the people here most worth meeting. Open the
-        personal link we emailed you — or have it sent again below.
+        {missing
+          ? "Looks like you're signed in with a link that's no longer active. Enter your email below and we'll send your personal link."
+          : "Set up your profile and get suggested intros to the people here most worth meeting. Open the personal link we emailed you — or have it sent again below."}
       </p>
       <label className="fw-label">Email me my link</label>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
