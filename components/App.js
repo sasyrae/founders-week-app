@@ -112,7 +112,9 @@ export default function App({ initialConfig = null, initialSessions = null }) {
       }
       if (saved) {
         const r = await api.findMe(saved);
-        if (r.ok) setMeState(normalizeMe(r.attendee));
+        // Only restore someone who actually registered (has createdAt); a
+        // matchmaking/roster stub shouldn't appear as a signed-in attendee.
+        if (r.ok && r.attendee?.createdAt) setMeState(normalizeMe(r.attendee));
         else
           try {
             localStorage.removeItem(ME_KEY);
