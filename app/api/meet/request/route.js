@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { meetEmailFromRequest } from "@/lib/auth";
-import { matchTargetEmail, createMeetRequest } from "@/lib/db";
+import { matchTargetEmail, emailForHandle, createMeetRequest } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/* Send a "request to meet" to one of my matches. The client passes the
-   opaque match id (not an email); we resolve it server-side so contact
+/* Send a "request to meet" to a match or anyone in the directory. The client
+   passes an opaque handle (or legacy match id), never an email, so contact
    details never reach the browser before a double opt-in. */
 export async function POST(req) {
   const email = meetEmailFromRequest(req);
@@ -17,8 +17,10 @@ export async function POST(req) {
     return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
   try {
-    const toEmail = await matchTargetEmail(email, body?.toId);
-    if (!toEmail) return NextResponse.json({ error: "That match is no longer available." }, { status: 404 });
+    const toEmail = body?.toHandle
+      ? await emailForHandle(body.toHandle)
+      : await matchTargetEmail(email, body?.toId);
+    if (!toEmail) return NextResponse.json({ error: "That person is no longer available." }, { status: 404 });
     const { request } = await createMeetRequest(email, toEmail, body?.note);
     return NextResponse.json({ ok: true, status: request.status });
   } catch (e) {

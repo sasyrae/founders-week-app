@@ -184,3 +184,6 @@ button.fw-spkchip:hover{border-color:var(--ink);background:#fff}
 .fw-connectbox a{color:var(--green);font-weight:600}
 .fw-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
 .fw-dot.amber{background:var(--amber)}
+.fw-seg{display:flex;gap:8px}
+.fw-seg button{flex:1;font:inherit;font-weight:600;font-size:14px;padding:9px 12px;border:1px solid var(--line);background:var(--card);border-radius:999px;cursor:pointer;color:var(--slate)}
+.fw-seg button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}

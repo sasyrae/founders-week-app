@@ -84,8 +84,9 @@ export const api = {
     jsonFetch("/api/meet/profile", { method: "PUT", body: JSON.stringify(fields) }),
   meetGetMatches: () => jsonFetch("/api/meet/matches"),
   meetGetRequests: () => jsonFetch("/api/meet/requests"),
-  meetRequest: (toId, note) =>
-    jsonFetch("/api/meet/request", { method: "POST", body: JSON.stringify({ toId, note }) }),
+  meetGetDirectory: () => jsonFetch("/api/meet/directory"),
+  meetRequest: (toHandle, note) =>
+    jsonFetch("/api/meet/request", { method: "POST", body: JSON.stringify({ toHandle, note }) }),
   meetRespond: (requestId, action) =>
     jsonFetch("/api/meet/request/respond", { method: "POST", body: JSON.stringify({ requestId, action }) }),
   adminMatchImport: (roster, enrichment) =>

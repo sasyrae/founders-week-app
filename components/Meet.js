@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { api } from "./api";
-import { MATCH_TAGS } from "../lib/tags";
+import { MATCH_TAGS, ATTENDEE_TYPES } from "../lib/tags";
 
 /* "Meet people": opt-in profile, AI-suggested matches, and double-opt-in
    meeting requests. Once opted in, matches + requests lead and the profile
@@ -22,6 +22,8 @@ export default function Meet({ flash, onPendingChange }) {
   const [err, setErr] = useState("");
   const [matches, setMatches] = useState(null); // null = not loaded
   const [requests, setRequests] = useState(null); // {incoming, outgoing, pendingIncoming}
+  const [tab, setTab] = useState("suggested"); // suggested | directory
+  const [directory, setDirectory] = useState(null); // null = not loaded
 
   useEffect(() => {
     (async () => {
@@ -65,6 +67,14 @@ export default function Meet({ flash, onPendingChange }) {
       setRequests(r);
       onPendingChange && onPendingChange(r.pendingIncoming || 0);
     }
+  };
+  const loadDirectory = async () => {
+    const r = await api.meetGetDirectory();
+    if (r.ok) setDirectory(r.people || []);
+  };
+  const goDirectory = () => {
+    setTab("directory");
+    if (directory === null) loadDirectory();
   };
 
   const toggle = (list, setList, tag) =>
@@ -180,6 +190,17 @@ export default function Meet({ flash, onPendingChange }) {
         </>
       ) : (
         <>
+          <div className="fw-seg" style={{ marginTop: 16 }}>
+            <button className={tab === "suggested" ? "on" : ""} onClick={() => setTab("suggested")}>
+              Suggested for you
+            </button>
+            <button className={tab === "directory" ? "on" : ""} onClick={goDirectory}>
+              Browse everyone{directory ? ` (${directory.length})` : ""}
+            </button>
+          </div>
+
+          {tab === "suggested" && (
+          <>
           {requests && requests.incoming.some((r) => r.status === "pending") && (
             <section style={{ marginTop: 18 }}>
               <h3 className="fw-h2" style={{ fontSize: 20 }}>Requests to meet you</h3>
@@ -222,6 +243,17 @@ export default function Meet({ flash, onPendingChange }) {
           </section>
 
           <ConnectedList requests={requests} />
+          </>
+          )}
+
+          {tab === "directory" && (
+            <Directory
+              people={directory}
+              reload={loadDirectory}
+              refreshRequests={loadRequests}
+              flash={flash}
+            />
+          )}
 
           <section style={{ marginTop: 30 }}>
             <button
@@ -246,7 +278,7 @@ function MatchCard({ m, onRequested, flash }) {
 
   const send = async () => {
     setBusy(true);
-    const r = await api.meetRequest(m.id, note);
+    const r = await api.meetRequest(m.handle, note);
     setBusy(false);
     setNoteOpen(false);
     if (r.ok) {
@@ -303,6 +335,60 @@ function MatchCard({ m, onRequested, flash }) {
         )}
       </div>
     </div>
+  );
+}
+
+function Directory({ people, reload, refreshRequests, flash }) {
+  const [q, setQ] = useState("");
+  const [type, setType] = useState("");
+  const [tag, setTag] = useState("");
+  if (people === null) return <p className="fw-muted" style={{ marginTop: 16 }}>Loading the directory…</p>;
+
+  const ql = q.trim().toLowerCase();
+  const filtered = people.filter((p) => {
+    if (type && p.type !== type) return false;
+    if (tag && !(p.lookingFor.includes(tag) || p.canHelpWith.includes(tag))) return false;
+    if (ql && !`${p.name} ${p.company} ${p.workingOn}`.toLowerCase().includes(ql)) return false;
+    return true;
+  });
+  const active = type || tag || ql;
+  const onRequested = () => {
+    reload();
+    refreshRequests && refreshRequests();
+  };
+
+  return (
+    <section style={{ marginTop: 18 }}>
+      <input
+        className="fw-input"
+        placeholder="Search name, company, or focus…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+        <select className="fw-input" style={{ width: "auto", flex: 1, minWidth: 140 }} value={type} onChange={(e) => setType(e.target.value)}>
+          <option value="">All types</option>
+          {ATTENDEE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select className="fw-input" style={{ width: "auto", flex: 1, minWidth: 140 }} value={tag} onChange={(e) => setTag(e.target.value)}>
+          <option value="">All tags</option>
+          {MATCH_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+      <p className="fw-muted" style={{ marginTop: 10 }}>
+        {filtered.length} {filtered.length === 1 ? "person" : "people"}
+        {active ? " match your filters" : " opted in"}
+      </p>
+      {filtered.length === 0 ? (
+        <p className="fw-muted">No one matches those filters yet.</p>
+      ) : (
+        <div style={{ display: "grid", gap: 12 }}>
+          {filtered.map((p) => (
+            <MatchCard key={p.handle} m={p} onRequested={onRequested} flash={flash} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
