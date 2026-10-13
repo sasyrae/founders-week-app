@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { meetEmailFromRequest } from "@/lib/auth";
+import { meetEmailFromRequest, attendeeToken } from "@/lib/auth";
 import { matchTargetEmail, emailForHandle, createMeetRequest } from "@/lib/db";
+import { sendMeetRequestEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,24 @@ export async function POST(req) {
       ? await emailForHandle(body.toHandle)
       : await matchTargetEmail(email, body?.toId);
     if (!toEmail) return NextResponse.json({ error: "That person is no longer available." }, { status: 404 });
-    const { request } = await createMeetRequest(email, toEmail, body?.note);
+    const { request, existed } = await createMeetRequest(email, toEmail, body?.note);
+    // Auto-notify the recipient (only for a brand-new pending request). Never
+    // blocks or fails the request.
+    if (!existed && request.status === "pending") {
+      try {
+        const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+        const proto = req.headers.get("x-forwarded-proto") || "https";
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || (host ? `${proto}://${host}` : "");
+        await sendMeetRequestEmail({
+          email: toEmail,
+          name: request.toName,
+          fromName: request.fromName,
+          link: `${origin}/?m=${encodeURIComponent(attendeeToken(toEmail))}`,
+        });
+      } catch {
+        /* ignore */
+      }
+    }
     return NextResponse.json({ ok: true, status: request.status });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Couldn't send the request." }, { status: 400 });

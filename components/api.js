@@ -98,6 +98,8 @@ export const api = {
     }),
   adminMatchRecompute: () => jsonFetch("/api/admin/match/recompute", { method: "POST" }),
   adminMatchSyncSpeakers: () => jsonFetch("/api/admin/match/sync-speakers", { method: "POST" }),
+  adminMatchNudge: (payload) =>
+    jsonFetch("/api/admin/match/nudge", { method: "POST", body: JSON.stringify(payload) }),
   adminMatchOverview: () => jsonFetch("/api/admin/match/overview"),
   adminMatchIntro: (aEmail, bEmail, reason) =>
     jsonFetch("/api/admin/match/intro", { method: "POST", body: JSON.stringify({ aEmail, bEmail, reason }) }),

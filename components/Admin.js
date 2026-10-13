@@ -1476,6 +1476,10 @@ function MatchAdmin({ flash }) {
   const [ireason, setIreason] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [bulkResult, setBulkResult] = useState(null);
+  const [nudgeSegment, setNudgeSegment] = useState("pending");
+  const [nudgeTest, setNudgeTest] = useState("");
+  const [nudgeBusy, setNudgeBusy] = useState("");
+  const [nudgeResult, setNudgeResult] = useState(null);
 
   const loadOverview = async () => {
     const r = await api.adminMatchOverview();
@@ -1534,6 +1538,29 @@ function MatchAdmin({ flash }) {
       setBulkResult(null);
       flash(r.error || "Bulk create failed.");
     }
+  };
+
+  const sendNudgeTest = async () => {
+    if (!nudgeTest.includes("@")) {
+      flash("Enter a test email first.");
+      return;
+    }
+    setNudgeBusy("test");
+    const r = await api.adminMatchNudge({ segment: nudgeSegment, mode: "test", testEmail: nudgeTest });
+    setNudgeBusy("");
+    flash(r.ok ? "Test email sent." : r.error || "Test failed.");
+  };
+  const sendNudgeAll = async () => {
+    const seg = nudgeSegment === "opted" ? "opted-in people (new matches)" : "people not opted in (intros waiting)";
+    if (!window.confirm(`Send the reminder email now to ${seg}? (People emailed in the last 18h are skipped.)`)) return;
+    setNudgeBusy("send");
+    setNudgeResult(null);
+    const r = await api.adminMatchNudge({ segment: nudgeSegment, mode: "send" });
+    setNudgeBusy("");
+    if (r.ok) {
+      setNudgeResult(r);
+      flash(`Sent ${r.sent} reminder${r.sent === 1 ? "" : "s"}.`);
+    } else flash(r.error || "Send failed.");
   };
 
   const run = async (label, fn) => {
@@ -1830,6 +1857,61 @@ function MatchAdmin({ flash }) {
           {working === "remove" ? "Removing…" : "Remove sample profiles"}
         </button>
       </div>
+
+      <hr style={{ margin: "22px 0", border: "none", borderTop: "1px solid var(--line)" }} />
+
+      <h3 className="fw-h2" style={{ fontSize: 20 }}>Reminders</h3>
+      <p className="fw-muted">
+        Email a nudge with each person's personal link. Pick who, send a test to yourself, then send.
+        Anyone emailed in the last 18 hours is skipped automatically. (A "someone wants to meet you"
+        email also goes out on its own whenever a person receives a meeting request.)
+      </p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+        <button
+          className={"fw-add" + (nudgeSegment === "pending" ? " added" : "")}
+          onClick={() => setNudgeSegment("pending")}
+        >
+          Not opted in — "intros waiting"
+        </button>
+        <button
+          className={"fw-add" + (nudgeSegment === "opted" ? " added" : "")}
+          onClick={() => setNudgeSegment("opted")}
+        >
+          Opted in — "new matches"
+        </button>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+        <input
+          className="fw-input"
+          style={{ flex: 1, minWidth: 180 }}
+          type="email"
+          placeholder="your@email.com (send a test)"
+          value={nudgeTest}
+          onChange={(e) => setNudgeTest(e.target.value)}
+        />
+        <button className="fw-add" disabled={!!nudgeBusy} onClick={sendNudgeTest}>
+          {nudgeBusy === "test" ? "Sending…" : "Send test"}
+        </button>
+      </div>
+      <button
+        className="fw-primary"
+        style={{ marginTop: 12 }}
+        disabled={!!nudgeBusy}
+        onClick={sendNudgeAll}
+      >
+        {nudgeBusy === "send"
+          ? "Sending…"
+          : nudgeSegment === "opted"
+          ? "Send “new matches” to everyone opted in"
+          : "Send “intros waiting” to everyone not opted in"}
+      </button>
+      {nudgeResult && (
+        <p className="fw-p" style={{ marginTop: 10 }}>
+          Sent <strong>{nudgeResult.sent}</strong>
+          {nudgeResult.skipped ? `, skipped ${nudgeResult.skipped} (recently emailed)` : ""}
+          {nudgeResult.failed ? `, ${nudgeResult.failed} failed` : ""} of {nudgeResult.total}.
+        </p>
+      )}
     </div>
   );
 }
