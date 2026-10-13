@@ -1684,6 +1684,25 @@ function MatchAdmin({ flash }) {
         </p>
       )}
 
+      <div style={{ marginTop: 16 }}>
+        <button
+          className="fw-add"
+          disabled={!!working}
+          onClick={() =>
+            run("speakers", async () => {
+              const r = await api.adminMatchSyncSpeakers();
+              return r.ok ? { ...r, message: `Added ${r.created} speakers, updated ${r.updated}.` } : r;
+            })
+          }
+        >
+          {working === "speakers" ? "Adding…" : "Add speakers to matchmaking"}
+        </button>
+        <p className="fw-muted" style={{ marginTop: 6 }}>
+          Gives every speaker a profile + personal link (seeded from their bio and LinkedIn) so they
+          can opt in and be matched, even if they aren't on the attendee roster.
+        </p>
+      </div>
+
       <hr style={{ margin: "22px 0", border: "none", borderTop: "1px solid var(--line)" }} />
 
       <h3 className="fw-h2" style={{ fontSize: 20 }}>Personal links</h3>

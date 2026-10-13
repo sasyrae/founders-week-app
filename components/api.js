@@ -97,6 +97,7 @@ export const api = {
       body: JSON.stringify({ roster, enrichment }),
     }),
   adminMatchRecompute: () => jsonFetch("/api/admin/match/recompute", { method: "POST" }),
+  adminMatchSyncSpeakers: () => jsonFetch("/api/admin/match/sync-speakers", { method: "POST" }),
   adminMatchOverview: () => jsonFetch("/api/admin/match/overview"),
   adminMatchIntro: (aEmail, bEmail, reason) =>
     jsonFetch("/api/admin/match/intro", { method: "POST", body: JSON.stringify({ aEmail, bEmail, reason }) }),
