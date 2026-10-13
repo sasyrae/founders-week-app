@@ -103,6 +103,8 @@ export const api = {
     jsonFetch("/api/admin/match/intro", { method: "POST", body: JSON.stringify({ aEmail, bEmail, reason }) }),
   adminMatchIntroRemove: (id) =>
     jsonFetch("/api/admin/match/intro?id=" + encodeURIComponent(id), { method: "DELETE" }),
+  adminMatchIntrosBulk: (items) =>
+    jsonFetch("/api/admin/match/intros-bulk", { method: "POST", body: JSON.stringify({ items }) }),
   adminMatchTest: (action) =>
     jsonFetch("/api/admin/match/test", { method: "POST", body: JSON.stringify({ action }) }),
 

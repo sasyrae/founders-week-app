@@ -1474,6 +1474,8 @@ function MatchAdmin({ flash }) {
   const [ia, setIa] = useState("");
   const [ib, setIb] = useState("");
   const [ireason, setIreason] = useState("");
+  const [bulkText, setBulkText] = useState("");
+  const [bulkResult, setBulkResult] = useState(null);
 
   const loadOverview = async () => {
     const r = await api.adminMatchOverview();
@@ -1507,6 +1509,31 @@ function MatchAdmin({ flash }) {
       flash("Intro removed.");
       loadOverview();
     } else flash(r.error || "Couldn't remove the intro.");
+  };
+  const createBulkIntros = async () => {
+    const items = bulkText
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        const p = l.split("||").map((s) => s.trim());
+        return { a: p[0] || "", b: p[1] || "", reason: p.slice(2).join("||").trim() };
+      })
+      .filter((it) => it.a && it.b && it.reason);
+    if (items.length === 0) {
+      flash("Paste one per line: Name A || Name B || reason");
+      return;
+    }
+    setBulkResult({ working: true });
+    const r = await api.adminMatchIntrosBulk(items);
+    if (r.ok) {
+      setBulkResult(r);
+      flash(`Created ${r.created} intros.`);
+      loadOverview();
+    } else {
+      setBulkResult(null);
+      flash(r.error || "Bulk create failed.");
+    }
   };
 
   const run = async (label, fn) => {
@@ -1613,6 +1640,40 @@ function MatchAdmin({ flash }) {
             placeholder="One or two sentences — shown to both of them."
           />
           <button className="fw-add" style={{ marginTop: 10 }} onClick={createIntro}>Create intro</button>
+
+          <label className="fw-label" style={{ marginTop: 18 }}>Bulk create — paste one per line: <code>Name A || Name B || reason</code></label>
+          <textarea
+            className="fw-input"
+            rows={5}
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder={"Jane Doe || John Smith || You're both building in fintech — worth comparing notes.\n…"}
+          />
+          <button
+            className="fw-add"
+            style={{ marginTop: 8 }}
+            disabled={bulkResult?.working}
+            onClick={createBulkIntros}
+          >
+            {bulkResult?.working ? "Creating…" : "Create all pasted intros"}
+          </button>
+          {bulkResult && !bulkResult.working && (
+            <div className="fw-p" style={{ marginTop: 10 }}>
+              Created <strong>{bulkResult.created}</strong>
+              {bulkResult.skipped?.length ? (
+                <>
+                  ; skipped <strong>{bulkResult.skipped.length}</strong>:
+                  <ul className="fw-muted" style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                    {bulkResult.skipped.slice(0, 40).map((s, i) => (
+                      <li key={i}>{s.a} ↔ {s.b} — {s.why}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                " — all created."
+              )}
+            </div>
+          )}
 
           {overview.curatedIntros.length > 0 && (
             <div className="fw-roster" style={{ marginTop: 14 }}>
