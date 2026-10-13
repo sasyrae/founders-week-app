@@ -15,6 +15,18 @@ import Meet from "./Meet";
 const ME_KEY = "fw26_me_email";
 const MATCH_ENABLED = process.env.NEXT_PUBLIC_MATCH_ENABLED === "true";
 
+/* Guarantee the fields the UI reads are always present, so a stub record
+   (e.g. a matchmaking/roster record with no sessions/name) can never crash
+   the app when it becomes the current attendee. */
+function normalizeMe(next) {
+  if (!next) return next;
+  return {
+    ...next,
+    sessions: Array.isArray(next.sessions) ? next.sessions : [],
+    name: next.name || [next.firstName, next.lastName].filter(Boolean).join(" ") || next.email || "",
+  };
+}
+
 export default function App({ initialConfig = null, initialSessions = null }) {
   // When the server pre-loaded the event, start with it already in state so
   // there's no "Loading the event…" flash. Otherwise fall back to a client
@@ -57,9 +69,10 @@ export default function App({ initialConfig = null, initialSessions = null }) {
 
   // Keep the signed-in attendee remembered across reloads.
   const setMe = useCallback((next) => {
-    setMeState(next);
+    const norm = normalizeMe(next);
+    setMeState(norm);
     try {
-      if (next?.email) localStorage.setItem(ME_KEY, next.email);
+      if (norm?.email) localStorage.setItem(ME_KEY, norm.email);
       else localStorage.removeItem(ME_KEY);
     } catch {
       /* ignore */
@@ -99,7 +112,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
       }
       if (saved) {
         const r = await api.findMe(saved);
-        if (r.ok) setMeState(r.attendee);
+        if (r.ok) setMeState(normalizeMe(r.attendee));
         else
           try {
             localStorage.removeItem(ME_KEY);

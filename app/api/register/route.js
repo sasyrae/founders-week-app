@@ -19,17 +19,21 @@ export async function POST(req) {
     const v = validateRegistration(body, config);
     if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
 
-    // If already registered, mirror the prototype: return the existing
-    // record, don't duplicate, and DON'T resend the confirmation email.
+    // If they've ACTUALLY registered before (createdAt set), return the
+    // existing record, don't duplicate, and DON'T resend the confirmation.
+    // A record with no createdAt is a matchmaking/roster stub — complete it
+    // into a real registration (preserving any matchmaking fields) rather
+    // than returning an incomplete record the app can't render.
     const existing = await getAttendee(v.fields.email);
-    if (existing) {
+    if (existing && existing.createdAt) {
       return NextResponse.json({ attendee: existing, existed: true });
     }
 
     const att = {
+      ...(existing || {}),
       ...v.fields,
-      sessions: [],
-      checkins: {},
+      sessions: Array.isArray(existing?.sessions) ? existing.sessions : [],
+      checkins: existing?.checkins || {},
       createdAt: new Date().toISOString(),
     };
     const saved = await upsertAttendee(att);
