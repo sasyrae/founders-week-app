@@ -1480,6 +1480,7 @@ function MatchAdmin({ flash }) {
   const [nudgeTest, setNudgeTest] = useState("");
   const [nudgeBusy, setNudgeBusy] = useState("");
   const [nudgeResult, setNudgeResult] = useState(null);
+  const [nudgeForce, setNudgeForce] = useState(false);
 
   const loadOverview = async () => {
     const r = await api.adminMatchOverview();
@@ -1552,10 +1553,11 @@ function MatchAdmin({ flash }) {
   };
   const sendNudgeAll = async () => {
     const seg = nudgeSegment === "opted" ? "opted-in people (new matches)" : "people not opted in (intros waiting)";
-    if (!window.confirm(`Send the reminder email now to ${seg}? (People emailed in the last 18h are skipped.)`)) return;
+    const guard = nudgeForce ? "Everyone will be emailed, including anyone emailed recently." : "People emailed in the last 18h are skipped.";
+    if (!window.confirm(`Send the reminder email now to ${seg}? ${guard}`)) return;
     setNudgeBusy("send");
     setNudgeResult(null);
-    const r = await api.adminMatchNudge({ segment: nudgeSegment, mode: "send" });
+    const r = await api.adminMatchNudge({ segment: nudgeSegment, mode: "send", force: nudgeForce });
     setNudgeBusy("");
     if (r.ok) {
       setNudgeResult(r);
@@ -1893,6 +1895,10 @@ function MatchAdmin({ flash }) {
           {nudgeBusy === "test" ? "Sending…" : "Send test"}
         </button>
       </div>
+      <label className="fw-checkrow">
+        <input type="checkbox" checked={nudgeForce} onChange={(e) => setNudgeForce(e.target.checked)} />
+        <span className="fw-muted">Re-send even to people emailed in the last 18h (for a same-day second reminder)</span>
+      </label>
       <button
         className="fw-primary"
         style={{ marginTop: 12 }}

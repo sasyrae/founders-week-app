@@ -41,12 +41,13 @@ export async function POST(req) {
     if (mode === "count") return NextResponse.json({ ok: true, total: targets.length });
 
     // mode === "send"
+    const force = !!body?.force; // ignore the recent-send cooldown
     const now = Date.now();
     let sent = 0;
     let skipped = 0;
     let failed = 0;
     for (const t of targets) {
-      if (t.nudgedAt && now - new Date(t.nudgedAt).getTime() < RECENT_MS) {
+      if (!force && t.nudgedAt && now - new Date(t.nudgedAt).getTime() < RECENT_MS) {
         skipped++;
         continue;
       }
