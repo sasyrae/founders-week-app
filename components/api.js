@@ -79,6 +79,8 @@ export const api = {
   meetStart: (token) =>
     jsonFetch("/api/meet/session", { method: "POST", body: JSON.stringify({ token }) }),
   meetSignOut: () => jsonFetch("/api/meet/session", { method: "DELETE" }),
+  meetRequestLink: (email) =>
+    jsonFetch("/api/meet/request-link", { method: "POST", body: JSON.stringify({ email }) }),
   meetGetProfile: () => jsonFetch("/api/meet/profile"),
   meetSaveProfile: (fields) =>
     jsonFetch("/api/meet/profile", { method: "PUT", body: JSON.stringify(fields) }),

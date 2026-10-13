@@ -4,7 +4,7 @@ import {
   createMeetSession,
   meetEmailFromRequest,
   MEET_COOKIE,
-  cookieOptions,
+  meetCookieOptions,
 } from "@/lib/auth";
 import { getMatchMe } from "@/lib/db";
 
@@ -31,7 +31,7 @@ export async function POST(req) {
     /* identity still valid even if the record lookup hiccups */
   }
   const res = NextResponse.json({ email, identity: me?.identity || null, hasProfile: !!me?.profile });
-  res.cookies.set(MEET_COOKIE, createMeetSession(email), cookieOptions);
+  res.cookies.set(MEET_COOKIE, createMeetSession(email), meetCookieOptions);
   return res;
 }
 
@@ -50,6 +50,6 @@ export async function GET(req) {
 /* Sign out of matchmaking on this device. */
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(MEET_COOKIE, "", { ...cookieOptions, maxAge: 0 });
+  res.cookies.set(MEET_COOKIE, "", { ...meetCookieOptions, maxAge: 0 });
   return res;
 }

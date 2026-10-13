@@ -129,16 +129,15 @@ export default function Meet({ flash, onPendingChange }) {
       </main>
     );
 
-  if (state === "anon" || state === "missing")
+  if (state === "anon") return <AnonGate />;
+
+  if (state === "missing")
     return (
       <main className="fw-main fw-narrow">
         <h2 className="fw-h2">Meet people</h2>
         <p className="fw-p">
-          {state === "anon"
-            ? "To set up your profile and see who to meet, open the personal link we emailed you — it signs you in on this device."
-            : "We couldn't find your registration yet. Reply to our email and we'll get you set up."}
+          We couldn't find your registration yet. Reply to our email and we'll get you set up.
         </p>
-        {state === "anon" && <p className="fw-muted">Can't find it? Reply to that email and we'll resend your link.</p>}
       </main>
     );
 
@@ -491,6 +490,47 @@ function ProfileEditor({
         </button>
       )}
     </div>
+  );
+}
+
+function AnonGate() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    if (!email.includes("@")) {
+      setSent("Enter a valid email.");
+      return;
+    }
+    setBusy(true);
+    const r = await api.meetRequestLink(email);
+    setBusy(false);
+    setSent(r.ok ? r.message || "Check your inbox for your link." : r.error || "Try again.");
+  };
+  return (
+    <main className="fw-main fw-narrow">
+      <h2 className="fw-h2">Meet people</h2>
+      <p className="fw-p">
+        Set up your profile and get suggested intros to the people here most worth meeting. Open the
+        personal link we emailed you — or have it sent again below.
+      </p>
+      <label className="fw-label">Email me my link</label>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <input
+          className="fw-input"
+          style={{ flex: 1, minWidth: 180 }}
+          type="email"
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+        />
+        <button className="fw-add" disabled={busy} onClick={submit}>
+          {busy ? "Sending…" : "Send link"}
+        </button>
+      </div>
+      {sent && <p className="fw-muted" style={{ marginTop: 10 }}>{sent}</p>}
+    </main>
   );
 }
 
