@@ -125,8 +125,10 @@ export default function App({ initialConfig = null, initialSessions = null }) {
           params.delete("m");
           const qs = params.toString();
           window.history.replaceState({}, "", window.location.pathname + (qs ? "?" + qs : ""));
-        } else if (MATCH_ENABLED || wantMeet) {
-          setMeetOn(true);
+        } else {
+          if (MATCH_ENABLED || wantMeet) setMeetOn(true);
+          // Always check for an existing matchmaking sign-in (cookie) so the
+          // tab persists on return visits, even with the feature flag off.
           const r = await api.meetWhoAmI();
           if (r.ok && r.identity) {
             setMeetOn(true);
