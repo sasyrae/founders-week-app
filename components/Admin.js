@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "./api";
-import { fmtTime, fmtWhen } from "@/lib/utils";
+import { fmtTime, fmtWhen, broadcastRecipients } from "@/lib/utils";
 import { DEFAULT_SUBJECT, DEFAULT_TEMPLATE, HOTEL_NIGHTS } from "@/lib/constants";
 import SpeakerAvatar from "./SpeakerAvatar";
 
@@ -205,6 +205,7 @@ export default function Admin({ flash, refreshEvent }) {
       {config && tab === "updates" && (
         <SendUpdate
           config={config}
+          attendees={attendees}
           announcements={announcements}
           setAnnouncements={setAnnouncements}
           flash={flash}
@@ -658,19 +659,27 @@ function Confirmations({ config, attendees, saveConfig, reload, flash }) {
 }
 
 /* ── compose + broadcast updates ─────────────────────────────── */
-function SendUpdate({ config, announcements, setAnnouncements, flash }) {
+function SendUpdate({ config, attendees, announcements, setAnnouncements, flash }) {
   const [text, setText] = useState("");
   const [author, setAuthor] = useState("Flybridge team");
   const [toSlack, setToSlack] = useState(false);
+  const [toEmail, setToEmail] = useState(false);
+  const [subject, setSubject] = useState("Founders Week update");
   const [busy, setBusy] = useState(false);
+  const emailCount = broadcastRecipients(attendees).length;
 
   const send = async () => {
     if (!text.trim()) {
       flash("Write the update first.");
       return;
     }
+    if (
+      toEmail &&
+      !window.confirm(`Email this update to ${emailCount} guest${emailCount === 1 ? "" : "s"}? This can't be unsent.`)
+    )
+      return;
     setBusy(true);
-    const r = await api.adminPublish({ text: text.trim(), author, toSlack });
+    const r = await api.adminPublish({ text: text.trim(), author, toSlack, toEmail, subject });
     setBusy(false);
     if (!r.ok) {
       flash(r.error || "Couldn't save the update — try again.");
@@ -684,7 +693,17 @@ function SendUpdate({ config, announcements, setAnnouncements, flash }) {
         ? " and posted to Slack"
         : " — but the Slack post failed (check your Slack setup)";
     }
-    flash("Update published" + slackNote + ".");
+    let emailNote = "";
+    if (toEmail) {
+      const e = r.email || {};
+      emailNote = e.error
+        ? ` — but no emails went out (${e.error})`
+        : e.failures?.length
+        ? ` — emailed ${e.sent} of ${e.attempted} guests (${e.failures.length} failed; check Resend)`
+        : `, emailed to ${e.sent} guest${e.sent === 1 ? "" : "s"}`;
+      setToEmail(false);
+    }
+    flash("Update published" + slackNote + emailNote + ".");
   };
 
   const remove = async (id) => {
@@ -714,8 +733,20 @@ function SendUpdate({ config, announcements, setAnnouncements, flash }) {
           <span className="fw-muted">(uses your Slack webhook)</span>
         </span>
       </label>
+      <label className="fw-checkrow">
+        <input type="checkbox" checked={toEmail} onChange={(e) => setToEmail(e.target.checked)} />
+        <span>
+          Also email all guests <span className="fw-muted">({emailCount} people, via Resend)</span>
+        </span>
+      </label>
+      {toEmail && (
+        <>
+          <label className="fw-label">Email subject</label>
+          <input className="fw-input" value={subject} onChange={(e) => setSubject(e.target.value)} />
+        </>
+      )}
       <button className="fw-primary" disabled={busy} onClick={send}>
-        {busy ? "Publishing…" : "Publish update"}
+        {busy ? (toEmail ? "Publishing & emailing…" : "Publishing…") : "Publish update"}
       </button>
 
       {items.length > 0 && (

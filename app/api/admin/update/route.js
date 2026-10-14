@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/auth";
-import { addAnnouncement, deleteAnnouncement } from "@/lib/db";
+import { addAnnouncement, deleteAnnouncement, listAttendees } from "@/lib/db";
 import { postToSlack } from "@/lib/slack";
-import { uid } from "@/lib/utils";
+import { uid, broadcastRecipients } from "@/lib/utils";
+import { sendBroadcast } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // emailing every guest can take a while
 
 /* Publish an update to the in-app feed, optionally cross-posting to
-   Slack via the webhook. Admin-only. */
+   Slack via the webhook and/or emailing every guest. Admin-only. */
 export async function POST(req) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body;
@@ -27,7 +29,13 @@ export async function POST(req) {
     if (body.toSlack) {
       slack = await postToSlack(text);
     }
-    return NextResponse.json({ item, slack });
+    let email = null;
+    if (body.toEmail) {
+      const subject = (body.subject || "").trim() || "Founders Week update";
+      const recipients = broadcastRecipients(await listAttendees());
+      email = await sendBroadcast({ recipients, subject, text, author });
+    }
+    return NextResponse.json({ item, slack, email });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Couldn't publish." }, { status: 500 });
   }
