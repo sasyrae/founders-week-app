@@ -32,7 +32,7 @@ export async function POST(req) {
     let email = null;
     if (body.toEmail) {
       const subject = (body.subject || "").trim() || "Founders Week update";
-      const recipients = broadcastRecipients(await listAttendees());
+      const recipients = broadcastRecipients(await listAttendees(), body.audience || "all");
       email = await sendBroadcast({ recipients, subject, text, author });
     }
     return NextResponse.json({ item, slack, email });

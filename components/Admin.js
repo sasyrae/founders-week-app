@@ -665,8 +665,9 @@ function SendUpdate({ config, attendees, announcements, setAnnouncements, flash 
   const [toSlack, setToSlack] = useState(false);
   const [toEmail, setToEmail] = useState(false);
   const [subject, setSubject] = useState("Founders Week update");
+  const [audience, setAudience] = useState("all");
   const [busy, setBusy] = useState(false);
-  const emailCount = broadcastRecipients(attendees).length;
+  const emailCount = broadcastRecipients(attendees, audience).length;
 
   const send = async () => {
     if (!text.trim()) {
@@ -675,11 +676,15 @@ function SendUpdate({ config, attendees, announcements, setAnnouncements, flash 
     }
     if (
       toEmail &&
-      !window.confirm(`Email this update to ${emailCount} guest${emailCount === 1 ? "" : "s"}? This can't be unsent.`)
+      !window.confirm(
+        `Email this update to ${emailCount} guest${emailCount === 1 ? "" : "s"}` +
+          (audience === "all" ? "" : ` registered for ${config.days.find((d) => d.id === audience)?.date}`) +
+          "? This can't be unsent."
+      )
     )
       return;
     setBusy(true);
-    const r = await api.adminPublish({ text: text.trim(), author, toSlack, toEmail, subject });
+    const r = await api.adminPublish({ text: text.trim(), author, toSlack, toEmail, subject, audience });
     setBusy(false);
     if (!r.ok) {
       flash(r.error || "Couldn't save the update — try again.");
@@ -736,11 +741,20 @@ function SendUpdate({ config, attendees, announcements, setAnnouncements, flash 
       <label className="fw-checkrow">
         <input type="checkbox" checked={toEmail} onChange={(e) => setToEmail(e.target.checked)} />
         <span>
-          Also email all guests <span className="fw-muted">({emailCount} people, via Resend)</span>
+          Also email it <span className="fw-muted">(via Resend)</span>
         </span>
       </label>
       {toEmail && (
         <>
+          <label className="fw-label">Send to</label>
+          <select className="fw-input" value={audience} onChange={(e) => setAudience(e.target.value)}>
+            <option value="all">All guests ({broadcastRecipients(attendees).length})</option>
+            {config.days.map((d) => (
+              <option key={d.id} value={d.id}>
+                Registered for {d.date} ({broadcastRecipients(attendees, d.id).length})
+              </option>
+            ))}
+          </select>
           <label className="fw-label">Email subject</label>
           <input className="fw-input" value={subject} onChange={(e) => setSubject(e.target.value)} />
         </>
