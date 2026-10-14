@@ -243,28 +243,56 @@ const Stat = ({ n, label }) => (
 );
 
 /* ── check-in ────────────────────────────────────────────────── */
+// Event-wide check-in keys live alongside session ids in a.checkins,
+// one per day ("day:d1"), so it covers every guest regardless of sessions.
+const DAY_KEY = "day:";
+const guestName = (a) =>
+  a.name || [a.roster?.firstName, a.roster?.lastName].filter(Boolean).join(" ") || a.email;
+const guestCompany = (a) => a.company || a.roster?.company || "";
+const todayDayId = (days) => {
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  return days.find((d) => d.date === today)?.id;
+};
+
 function CheckIn({ config, sessions, attendees, onSave }) {
-  const [sid, setSid] = useState(sessions[0]?.id || "");
+  const [sid, setSid] = useState(() => DAY_KEY + (todayDayId(config.days) || config.days[0]?.id || ""));
   const [q, setQ] = useState("");
-  const s = sessions.find((x) => x.id === sid);
   if (!attendees) return <p className="fw-p">Loading registrants…</p>;
 
-  const signedUp = attendees.filter((a) => (a.sessions || []).includes(sid));
-  const walkIns = q
-    ? attendees.filter(
-        (a) =>
-          !(a.sessions || []).includes(sid) &&
-          (a.name + a.email + (a.company || "")).toLowerCase().includes(q.toLowerCase())
-      )
-    : [];
+  const isEvent = sid.startsWith(DAY_KEY);
+  const s = sessions.find((x) => x.id === sid);
+  const day = isEvent ? config.days.find((d) => DAY_KEY + d.id === sid) : null;
+  const match = (a) =>
+    (guestName(a) + a.email + guestCompany(a)).toLowerCase().includes(q.trim().toLowerCase());
+
+  const signedUp = isEvent
+    ? [...attendees].sort((a, b) => guestName(a).localeCompare(guestName(b)))
+    : attendees.filter((a) => (a.sessions || []).includes(sid));
+  const shown = isEvent && q ? signedUp.filter(match) : signedUp;
+  const walkIns = !isEvent && q ? attendees.filter((a) => !(a.sessions || []).includes(sid) && match(a)) : [];
   const checked = signedUp.filter((a) => a.checkins?.[sid]).length;
 
   const toggle = (a) => onSave({ ...a, checkins: { ...(a.checkins || {}), [sid]: !a.checkins?.[sid] } });
+  const search = (
+    <input
+      className="fw-input"
+      value={q}
+      onChange={(e) => setQ(e.target.value)}
+      placeholder="Search name, company, email…"
+    />
+  );
 
   return (
     <div>
-      <label className="fw-label">Session</label>
+      <label className="fw-label">Check in for</label>
       <select className="fw-input" value={sid} onChange={(e) => setSid(e.target.value)}>
+        <optgroup label="Event check-in — all guests">
+          {config.days.map((d) => (
+            <option key={d.id} value={DAY_KEY + d.id}>
+              All guests — {d.date}
+            </option>
+          ))}
+        </optgroup>
         {config.days.map((d) => (
           <optgroup key={d.id} label={d.label}>
             {sessions
@@ -278,9 +306,9 @@ function CheckIn({ config, sessions, attendees, onSave }) {
           </optgroup>
         ))}
       </select>
-      {s && (
+      {(s || day) && (
         <div className="fw-statrow">
-          <Stat n={signedUp.length} label="signed up" />
+          <Stat n={signedUp.length} label={isEvent ? "registered guests" : "signed up"} />
           <Stat n={checked} label="checked in" />
           <Stat
             n={signedUp.length ? Math.round((checked / signedUp.length) * 100) + "%" : "—"}
@@ -288,48 +316,51 @@ function CheckIn({ config, sessions, attendees, onSave }) {
           />
         </div>
       )}
+      {isEvent && <div style={{ marginBottom: 10 }}>{search}</div>}
       <div className="fw-roster">
-        {signedUp.length === 0 && <p className="fw-p">Nobody has registered for this session yet.</p>}
-        {signedUp.map((a) => (
+        {signedUp.length === 0 && (
+          <p className="fw-p">{isEvent ? "No registered guests yet." : "Nobody has registered for this session yet."}</p>
+        )}
+        {isEvent && q && shown.length === 0 && <p className="fw-p">No guests match “{q}”.</p>}
+        {shown.map((a) => (
           <button
             key={a.email}
             className={"fw-person" + (a.checkins?.[sid] ? " in" : "")}
             onClick={() => toggle(a)}
           >
             <span>
-              <strong>{a.name}</strong> <span className="fw-muted">{a.company}</span>
+              <strong>{guestName(a)}</strong> <span className="fw-muted">{guestCompany(a)}</span>
             </span>
             <span className="fw-checkpill">{a.checkins?.[sid] ? "✓ Checked in" : "Tap to check in"}</span>
           </button>
         ))}
       </div>
-      <label className="fw-label" style={{ marginTop: 20 }}>
-        Walk-in? Search all registrants
-      </label>
-      <input
-        className="fw-input"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search name, company, email…"
-      />
-      {walkIns.slice(0, 6).map((a) => (
-        <button
-          key={a.email}
-          className="fw-person"
-          onClick={() =>
-            onSave({
-              ...a,
-              sessions: [...(a.sessions || []), sid],
-              checkins: { ...(a.checkins || {}), [sid]: true },
-            })
-          }
-        >
-          <span>
-            <strong>{a.name}</strong> <span className="fw-muted">{a.company}</span>
-          </span>
-          <span className="fw-checkpill">+ Add & check in</span>
-        </button>
-      ))}
+      {!isEvent && (
+        <>
+          <label className="fw-label" style={{ marginTop: 20 }}>
+            Walk-in? Search all registrants
+          </label>
+          {search}
+          {walkIns.slice(0, 6).map((a) => (
+            <button
+              key={a.email}
+              className="fw-person"
+              onClick={() =>
+                onSave({
+                  ...a,
+                  sessions: [...(a.sessions || []), sid],
+                  checkins: { ...(a.checkins || {}), [sid]: true },
+                })
+              }
+            >
+              <span>
+                <strong>{guestName(a)}</strong> <span className="fw-muted">{guestCompany(a)}</span>
+              </span>
+              <span className="fw-checkpill">+ Add & check in</span>
+            </button>
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -359,7 +390,11 @@ function Registrants({ config, sessions, attendees, flash, onDelete }) {
       (a.sessions || []).map((sid) => sessions.find((s) => s.id === sid)?.title || sid).join("; "),
       Object.keys(a.checkins || {})
         .filter((k) => a.checkins[k])
-        .map((sid) => sessions.find((s) => s.id === sid)?.title || sid)
+        .map((sid) =>
+          sid.startsWith(DAY_KEY)
+            ? `Event check-in (${config.days.find((d) => DAY_KEY + d.id === sid)?.date || sid})`
+            : sessions.find((s) => s.id === sid)?.title || sid
+        )
         .join("; "),
     ]);
     const csv = [head, ...rows]
