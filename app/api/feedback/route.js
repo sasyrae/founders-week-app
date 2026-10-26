@@ -40,10 +40,14 @@ export async function POST(req) {
       favorite: str(body.favorite),
       usedMeet: ["yes", "no"].includes(body.usedMeet) ? body.usedMeet : "",
       meetNote: str(body.meetNote),
+      nextInterest: ["yes", "maybe", "no"].includes(body.nextInterest) ? body.nextInterest : "",
+      nextUnmissable: str(body.nextUnmissable),
+      nextPrefer: ["smaller", "larger", "alternate", "either"].includes(body.nextPrefer) ? body.nextPrefer : "",
       ...(rid ? { rid } : {}),
     };
     const hasAny =
-      data.overall != null || data.nps != null || data.valuable || data.improve || data.favorite || data.usedMeet || data.meetNote;
+      data.overall != null || data.nps != null || data.valuable || data.improve || data.favorite ||
+      data.usedMeet || data.meetNote || data.nextInterest || data.nextUnmissable || data.nextPrefer;
     if (!hasAny) return NextResponse.json({ error: "Nothing to submit." }, { status: 400 });
     await addFeedback({ kind: "event", data });
     return NextResponse.json({ ok: true });

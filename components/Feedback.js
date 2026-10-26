@@ -12,6 +12,9 @@ export default function Feedback({ config }) {
   const [favorite, setFavorite] = useState("");
   const [usedMeet, setUsedMeet] = useState("");
   const [meetNote, setMeetNote] = useState("");
+  const [nextInterest, setNextInterest] = useState("");
+  const [nextUnmissable, setNextUnmissable] = useState("");
+  const [nextPrefer, setNextPrefer] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState("");
@@ -28,6 +31,9 @@ export default function Feedback({ config }) {
       favorite,
       usedMeet,
       meetNote,
+      nextInterest,
+      nextUnmissable,
+      nextPrefer,
     });
     setBusy(false);
     if (r.ok) setDone(true);
@@ -86,6 +92,49 @@ export default function Feedback({ config }) {
           <textarea className="fw-input" rows={2} value={meetNote} onChange={(e) => setMeetNote(e.target.value)} />
         </>
       )}
+
+      <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 28 }}>Next year</h3>
+      <p className="fw-p" style={{ marginTop: 0 }}>
+        We're exploring a smaller, more focused founder offsite — capped at ~30 founders, with more
+        downtime and interactive experiences, just a few talks and panels, tightened to one evening
+        plus one full day.
+      </p>
+
+      <label className="fw-label">Would you be interested in that format?</label>
+      <div className="fw-caterchips">
+        {[["yes", "Yes, I'd prioritize it"], ["maybe", "Maybe"], ["no", "Probably not"]].map(([v, l]) => (
+          <button
+            key={v}
+            type="button"
+            className={"fw-add" + (nextInterest === v ? " added" : "")}
+            onClick={() => setNextInterest(nextInterest === v ? "" : v)}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <label className="fw-label">What would make it something you couldn't miss?</label>
+      <textarea className="fw-input" rows={3} value={nextUnmissable} onChange={(e) => setNextUnmissable(e.target.value)} />
+
+      <label className="fw-label">If you had to choose, which would you want?</label>
+      <div className="fw-caterchips">
+        {[
+          ["smaller", "The smaller focused offsite"],
+          ["larger", "This larger multi-day format"],
+          ["alternate", "Alternate between them"],
+          ["either", "Either works for me"],
+        ].map(([v, l]) => (
+          <button
+            key={v}
+            type="button"
+            className={"fw-add" + (nextPrefer === v ? " added" : "")}
+            onClick={() => setNextPrefer(nextPrefer === v ? "" : v)}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
 
       {err && <p className="fw-err" style={{ marginTop: 12 }}>{err}</p>}
       {done ? (

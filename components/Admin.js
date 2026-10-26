@@ -2049,6 +2049,7 @@ function FeedbackAdmin({ sessions }) {
     if (e.improve) openNotes.push(["To improve", e.improve]);
     if (e.favorite) openNotes.push(["Favorite", e.favorite]);
     if (e.meetNote) openNotes.push(["Meet People", e.meetNote]);
+    if (e.nextUnmissable) openNotes.push(["Next-year must-have", e.nextUnmissable]);
   }
 
   return (
@@ -2065,6 +2066,17 @@ function FeedbackAdmin({ sessions }) {
       <a className="fw-add" href="/api/admin/feedback?format=csv" style={{ display: "inline-block" }}>
         Download all feedback (CSV)
       </a>
+
+      <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 24 }}>Next year — smaller offsite</h3>
+      <p className="fw-p" style={{ marginTop: 0 }}>
+        Interested: <strong>{data.nextInterest?.yes || 0}</strong> would prioritize ·{" "}
+        {data.nextInterest?.maybe || 0} maybe · {data.nextInterest?.no || 0} probably not.
+      </p>
+      <p className="fw-p" style={{ marginTop: 0 }}>
+        Prefer: <strong>{data.nextPrefer?.smaller || 0}</strong> smaller offsite ·{" "}
+        {data.nextPrefer?.larger || 0} this larger format · {data.nextPrefer?.alternate || 0} alternate ·{" "}
+        {data.nextPrefer?.either || 0} either.
+      </p>
 
       <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 24 }}>By session</h3>
       {(!data.perSession || data.perSession.length === 0) && (
