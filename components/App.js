@@ -131,6 +131,8 @@ export default function App({ initialConfig = null, initialSessions = null }) {
         const params = new URLSearchParams(window.location.search);
         const mtok = params.get("m");
         const wantMeet = params.get("meet") === "1";
+        // Deep link straight to a view, e.g. ?view=feedback for the survey.
+        if (params.get("view") === "feedback") setView("feedback");
         if (mtok) {
           const r = await api.meetStart(mtok);
           if (r.ok) {
