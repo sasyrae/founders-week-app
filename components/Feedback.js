@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "./api";
 
 /* Anonymous overall-event feedback. Per-session ratings live on each session
@@ -33,20 +33,6 @@ export default function Feedback({ config }) {
     if (r.ok) setDone(true);
     else setErr(r.error || "Couldn't submit — try again.");
   };
-
-  if (done)
-    return (
-      <main className="fw-main fw-narrow">
-        <h2 className="fw-h2">Thank you</h2>
-        <p className="fw-p">
-          Your feedback is in — we read every note and it genuinely shapes next year. Thanks for being
-          part of Founders Week.
-        </p>
-        <p className="fw-muted">
-          You can also rate individual sessions from the Agenda — tap "Rate this session" on any one.
-        </p>
-      </main>
-    );
 
   return (
     <main className="fw-main fw-narrow">
@@ -102,10 +88,85 @@ export default function Feedback({ config }) {
       )}
 
       {err && <p className="fw-err" style={{ marginTop: 12 }}>{err}</p>}
-      <button className="fw-primary" disabled={busy} onClick={submit}>
-        {busy ? "Sending…" : "Send feedback"}
-      </button>
+      {done ? (
+        <p className="fw-banner" style={{ position: "static", marginTop: 16 }}>
+          Thanks — your feedback is in.
+        </p>
+      ) : (
+        <button className="fw-primary" disabled={busy} onClick={submit}>
+          {busy ? "Sending…" : "Send feedback"}
+        </button>
+      )}
+
+      <SessionRatings config={config} />
     </main>
+  );
+}
+
+function SessionRatings({ config }) {
+  const days = config?.days || [];
+  const sessions = config?.sessions || [];
+  if (sessions.length === 0) return null;
+  return (
+    <section style={{ marginTop: 34 }}>
+      <h3 className="fw-h2" style={{ fontSize: 20 }}>Rate the sessions</h3>
+      <p className="fw-muted">Tap stars on any session you attended — saved as you go.</p>
+      {days.map((d) => {
+        const list = sessions
+          .filter((s) => s.day === d.id)
+          .sort((a, b) => String(a.start).localeCompare(String(b.start)));
+        if (!list.length) return null;
+        return (
+          <div key={d.id} style={{ marginTop: 14 }}>
+            <div className="fw-label">{d.label}</div>
+            {list.map((s) => (
+              <SessionRateRow key={s.id} s={s} />
+            ))}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function SessionRateRow({ s }) {
+  const [stars, setStars] = useState(0);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("fw_rated_" + s.id);
+      if (v && v !== "c") setStars(Number(v) || 0);
+    } catch {
+      /* ignore */
+    }
+  }, [s.id]);
+  const rate = async (n) => {
+    setStars(n);
+    const r = await api.submitFeedback({ kind: "session", sessionId: s.id, rating: n });
+    if (r.ok) {
+      try {
+        localStorage.setItem("fw_rated_" + s.id, String(n));
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+      <span style={{ fontSize: 14 }}>{s.title}</span>
+      <span style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            aria-label={`${n} star${n > 1 ? "s" : ""}`}
+            onClick={() => rate(n)}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0, color: n <= stars ? "var(--amber)" : "var(--line)" }}
+          >
+            ★
+          </button>
+        ))}
+      </span>
+    </div>
   );
 }
 

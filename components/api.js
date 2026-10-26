@@ -74,9 +74,10 @@ export const api = {
     jsonFetch("/api/admin/speakers", { method: "PUT", body: JSON.stringify({ ids }) }),
   adminUploadSpeakerPhoto: async (speakerId, file) => uploadForm("/api/admin/speaker/photo", { speakerId }, file),
 
-  // feedback (anonymous)
+  // feedback (anonymous; pseudonymous respondent id groups one person's
+  // submissions without storing any identity)
   submitFeedback: (payload) =>
-    jsonFetch("/api/feedback", { method: "POST", body: JSON.stringify(payload) }),
+    jsonFetch("/api/feedback", { method: "POST", body: JSON.stringify({ ...payload, rid: feedbackRid() }) }),
   adminFeedback: () => jsonFetch("/api/admin/feedback"),
 
   // matchmaking ("Meet people")
@@ -121,6 +122,21 @@ export const api = {
     jsonFetch("/api/speaker/self", { method: "PUT", body: JSON.stringify({ token, ...fields }) }),
   speakerSelfUploadPhoto: (token, file) => uploadForm("/api/speaker/self/photo", { token }, file),
 };
+
+/* A stable, meaningless per-browser id so one person's anonymous feedback
+   submissions can be grouped (never any name/email). */
+function feedbackRid() {
+  try {
+    let r = localStorage.getItem("fw_fb_rid");
+    if (!r) {
+      r = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      localStorage.setItem("fw_fb_rid", r);
+    }
+    return r;
+  } catch {
+    return "";
+  }
+}
 
 /* Shared multipart upload helper — the browser sets the multipart
    boundary, so we must NOT send a Content-Type header. */

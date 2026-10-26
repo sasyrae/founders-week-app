@@ -19,13 +19,15 @@ export async function POST(req) {
     return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
   try {
+    const rid = str(body?.rid, 64);
     if (body?.kind === "session") {
       const rating = intIn(body.rating, 1, 5);
       const comment = str(body.comment, 1000);
       if (!body.sessionId || (rating == null && !comment)) {
         return NextResponse.json({ error: "Add a rating or a comment." }, { status: 400 });
       }
-      await addFeedback({ kind: "session", sessionId: String(body.sessionId), rating, data: comment ? { comment } : {} });
+      const data = { ...(comment ? { comment } : {}), ...(rid ? { rid } : {}) };
+      await addFeedback({ kind: "session", sessionId: String(body.sessionId), rating, data });
       return NextResponse.json({ ok: true });
     }
 
@@ -38,6 +40,7 @@ export async function POST(req) {
       favorite: str(body.favorite),
       usedMeet: ["yes", "no"].includes(body.usedMeet) ? body.usedMeet : "",
       meetNote: str(body.meetNote),
+      ...(rid ? { rid } : {}),
     };
     const hasAny =
       data.overall != null || data.nps != null || data.valuable || data.improve || data.favorite || data.usedMeet || data.meetNote;

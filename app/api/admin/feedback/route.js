@@ -10,12 +10,12 @@ export async function GET(req) {
   try {
     if (new URL(req.url).searchParams.get("format") === "csv") {
       const rows = await getFeedbackRows();
-      const header = ["ts", "kind", "session_id", "rating", "overall", "nps", "used_meet", "valuable", "improve", "favorite", "meet_note", "comment"];
+      const header = ["ts", "respondent", "kind", "session_id", "rating", "overall", "nps", "used_meet", "valuable", "improve", "favorite", "meet_note", "comment"];
       const out = [header];
       for (const r of rows) {
         const d = r.data || {};
         out.push([
-          r.ts, r.kind, r.session_id || "", r.rating ?? "",
+          r.ts, d.rid || "", r.kind, r.session_id || "", r.rating ?? "",
           d.overall ?? "", d.nps ?? "", d.usedMeet || "",
           d.valuable || "", d.improve || "", d.favorite || "", d.meetNote || "", d.comment || "",
         ]);
