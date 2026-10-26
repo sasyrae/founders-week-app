@@ -372,6 +372,18 @@ function CheckIn({ config, sessions, attendees, onSave }) {
 function Registrants({ config, sessions, attendees, flash, onDelete }) {
   if (!attendees) return <p className="fw-p">Loading registrants…</p>;
 
+  // Attendance = event-wide day check-in, or any session checked in that day.
+  const dayCheckedIn = (a, dayId) =>
+    !!a.checkins?.[DAY_KEY + dayId] || sessions.some((s) => s.day === dayId && a.checkins?.[s.id]);
+  const attendedAny = (a) => config.days.some((d) => dayCheckedIn(a, d.id));
+  const overallAttended = attendees.filter(attendedAny).length;
+  const perDayAttended = config.days.map((d) => ({
+    id: d.id,
+    date: d.date,
+    label: d.label,
+    n: attendees.filter((a) => dayCheckedIn(a, d.id)).length,
+  }));
+
   const dietCounts = {};
   attendees.forEach((a) => (a.dietary || []).forEach((d) => (dietCounts[d] = (dietCounts[d] || 0) + 1)));
   const others = attendees.filter((a) => a.dietaryOther?.trim());
@@ -380,6 +392,7 @@ function Registrants({ config, sessions, attendees, flash, onDelete }) {
     const head = [
       "First name", "Last name", "Email", "Company", "Type", "Days", "Hotel",
       "Hotel nights", "Dietary", "Dietary notes", "Registered", "Sessions", "Check-ins",
+      "Attended", ...config.days.map((d, i) => `Day ${i + 1} (${d.date || d.label})`),
     ];
     const rows = attendees.map((a) => [
       a.firstName || (a.name || "").split(" ")[0],
@@ -399,6 +412,8 @@ function Registrants({ config, sessions, attendees, flash, onDelete }) {
             : sessions.find((s) => s.id === sid)?.title || sid
         )
         .join("; "),
+      attendedAny(a) ? "Yes" : "No",
+      ...config.days.map((d) => (dayCheckedIn(a, d.id) ? "Yes" : "")),
     ]);
     const csv = [head, ...rows]
       .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
@@ -430,6 +445,13 @@ function Registrants({ config, sessions, attendees, flash, onDelete }) {
         >
           Export CSV
         </button>
+      </div>
+
+      <div className="fw-statrow">
+        <Stat n={overallAttended} label="attended (any day)" />
+        {perDayAttended.map((d, i) => (
+          <Stat key={d.id} n={d.n} label={`Day ${i + 1} attended`} />
+        ))}
       </div>
 
       <div className="fw-cater">
