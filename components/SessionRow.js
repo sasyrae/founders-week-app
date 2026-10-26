@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { fmtTime } from "@/lib/utils";
 import SpeakerAvatar from "./SpeakerAvatar";
+import { api } from "./api";
 
 /* One agenda row. onToggle(accessCode?) is async and returns the API
    result ({ ok, error, code }). Access codes and capacity are enforced
@@ -38,6 +39,35 @@ export default function SessionRow({
   const [codeErr, setCodeErr] = useState("");
   const [rowErr, setRowErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Anonymous per-session rating.
+  const [rateOpen, setRateOpen] = useState(false);
+  const [stars, setStars] = useState(0);
+  const [fbComment, setFbComment] = useState("");
+  const [rated, setRated] = useState(false);
+  const [rating, setRating] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("fw_rated_" + s.id)) setRated(true);
+    } catch {
+      /* ignore */
+    }
+  }, [s.id]);
+  const sendRating = async () => {
+    if (!stars && !fbComment.trim()) return;
+    setRating(true);
+    const r = await api.submitFeedback({ kind: "session", sessionId: s.id, rating: stars || undefined, comment: fbComment });
+    setRating(false);
+    if (r.ok) {
+      try {
+        localStorage.setItem("fw_rated_" + s.id, String(stars || "c"));
+      } catch {
+        /* ignore */
+      }
+      setRated(true);
+      setRateOpen(false);
+    } else setRowErr(r.error || "Couldn't submit rating.");
+  };
 
   const gated = s.gated ?? !!s.accessCode;
   const taken = s.taken ?? 0;
@@ -165,6 +195,43 @@ export default function SessionRow({
           </div>
         )}
         {rowErr && <div className="fw-err">{rowErr}</div>}
+
+        <div className="fw-rate">
+          {rated ? (
+            <span className="fw-muted">✓ Thanks for rating this session</span>
+          ) : rateOpen ? (
+            <div>
+              <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                    onClick={() => setStars(n === stars ? 0 : n)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 24, lineHeight: 1, padding: 0, color: n <= stars ? "var(--amber)" : "var(--line)" }}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="fw-input"
+                rows={2}
+                placeholder="Optional comment"
+                value={fbComment}
+                onChange={(e) => setFbComment(e.target.value)}
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                <button className="fw-add added" disabled={rating} onClick={sendRating}>
+                  {rating ? "Sending…" : "Submit rating"}
+                </button>
+                <button className="fw-linkbtn" onClick={() => setRateOpen(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button className="fw-linkbtn" onClick={() => setRateOpen(true)}>Rate this session</button>
+          )}
+        </div>
       </div>
     </div>
   );

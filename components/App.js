@@ -11,6 +11,7 @@ import Speakers from "./Speakers";
 import SpeakerModal from "./SpeakerModal";
 import Admin from "./Admin";
 import Meet from "./Meet";
+import Feedback from "./Feedback";
 
 const ME_KEY = "fw26_me_email";
 const MATCH_ENABLED = process.env.NEXT_PUBLIC_MATCH_ENABLED === "true";
@@ -240,6 +241,9 @@ export default function App({ initialConfig = null, initialSessions = null }) {
               Meet People{pendingMeet ? ` (${pendingMeet})` : ""}
             </button>
           )}
+          <button className={view === "feedback" ? "on" : ""} onClick={() => setView("feedback")}>
+            Feedback
+          </button>
           {!me && (
             <button className={view === "register" ? "on" : ""} onClick={() => setView("register")}>
               Register
@@ -311,6 +315,7 @@ export default function App({ initialConfig = null, initialSessions = null }) {
       {view === "updates" && <Updates config={config} />}
       {view === "eats" && <Guide config={config} />}
       {view === "meet" && <Meet flash={flash} onPendingChange={setPendingMeet} />}
+      {view === "feedback" && <Feedback config={config} />}
       {view === "admin" && <Admin flash={flash} refreshEvent={loadEvent} />}
 
       {modalSpeaker && (

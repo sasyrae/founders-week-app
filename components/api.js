@@ -74,6 +74,11 @@ export const api = {
     jsonFetch("/api/admin/speakers", { method: "PUT", body: JSON.stringify({ ids }) }),
   adminUploadSpeakerPhoto: async (speakerId, file) => uploadForm("/api/admin/speaker/photo", { speakerId }, file),
 
+  // feedback (anonymous)
+  submitFeedback: (payload) =>
+    jsonFetch("/api/feedback", { method: "POST", body: JSON.stringify(payload) }),
+  adminFeedback: () => jsonFetch("/api/admin/feedback"),
+
   // matchmaking ("Meet people")
   meetWhoAmI: () => jsonFetch("/api/meet/session"),
   meetStart: (token) =>

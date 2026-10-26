@@ -189,3 +189,4 @@ button.fw-spkchip:hover{border-color:var(--ink);background:#fff}
 .fw-seg button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .fw-curatedtag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--cobalt);background:var(--cobalt-soft);padding:3px 8px;border-radius:999px;margin-bottom:8px}
 .fw-matchcard.curated{border-color:var(--cobalt)}
+.fw-rate{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:13px}

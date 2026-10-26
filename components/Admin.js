@@ -167,6 +167,7 @@ export default function Admin({ flash, refreshEvent }) {
           ["speakers", "Speakers"],
           ["sessions", "Sessions"],
           ["matching", "Matching"],
+          ["feedback", "Feedback"],
           ["settings", "Settings"],
         ].map(([id, label]) => (
           <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
@@ -231,6 +232,7 @@ export default function Admin({ flash, refreshEvent }) {
         />
       )}
       {config && tab === "matching" && <MatchAdmin flash={flash} />}
+      {config && tab === "feedback" && <FeedbackAdmin sessions={sessions} />}
       {config && tab === "settings" && <Settings config={config} saveConfig={saveConfig} flash={flash} />}
     </main>
   );
@@ -1997,6 +1999,87 @@ function MatchAdmin({ flash }) {
           {nudgeResult.skipped ? `, skipped ${nudgeResult.skipped} (recently emailed)` : ""}
           {nudgeResult.failed ? `, ${nudgeResult.failed} failed` : ""} of {nudgeResult.total}.
         </p>
+      )}
+    </div>
+  );
+}
+
+/* ── feedback dashboard (anonymous) ──────────────────────────── */
+function FeedbackAdmin({ sessions }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const titleOf = (id) => (sessions.find((s) => s.id === id) || {}).title || id;
+
+  useEffect(() => {
+    (async () => {
+      const r = await api.adminFeedback();
+      if (r.ok) setData(r);
+      else setErr(r.error || "Couldn't load feedback.");
+    })();
+  }, []);
+
+  if (err) return <p className="fw-p">{err}</p>;
+  if (!data) return <p className="fw-p">Loading feedback…</p>;
+
+  const openNotes = [];
+  for (const e of data.event || []) {
+    if (e.valuable) openNotes.push(["Most valuable", e.valuable]);
+    if (e.improve) openNotes.push(["To improve", e.improve]);
+    if (e.favorite) openNotes.push(["Favorite", e.favorite]);
+    if (e.meetNote) openNotes.push(["Meet People", e.meetNote]);
+  }
+
+  return (
+    <div>
+      <div className="fw-statrow">
+        <Stat n={data.eventCount} label="overall responses" />
+        <Stat n={data.overallAvg != null ? data.overallAvg + "★" : "—"} label="avg rating" />
+        <Stat n={data.nps != null ? data.nps : "—"} label={`NPS (${data.npsCount})`} />
+        <Stat
+          n={data.usedMeetTotal ? Math.round((data.usedMeetYes / data.usedMeetTotal) * 100) + "%" : "—"}
+          label="used Meet People"
+        />
+      </div>
+      <a className="fw-add" href="/api/admin/feedback?format=csv" style={{ display: "inline-block" }}>
+        Download all feedback (CSV)
+      </a>
+
+      <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 24 }}>By session</h3>
+      {(!data.perSession || data.perSession.length === 0) && (
+        <p className="fw-muted">No session ratings yet.</p>
+      )}
+      <div className="fw-roster">
+        {(data.perSession || []).map((p) => (
+          <div key={p.sessionId} className="fw-person" style={{ cursor: "default", alignItems: "flex-start" }}>
+            <span>
+              <strong>{titleOf(p.sessionId)}</strong>
+              {p.comments.length > 0 && (
+                <span className="fw-muted" style={{ display: "block", fontSize: 13, marginTop: 4 }}>
+                  {p.comments.map((c, i) => (
+                    <span key={i} style={{ display: "block" }}>“{c}”</span>
+                  ))}
+                </span>
+              )}
+            </span>
+            <span className="fw-checkpill">{p.avg != null ? p.avg + "★ · " + p.count : p.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 24 }}>Open comments</h3>
+      {openNotes.length === 0 ? (
+        <p className="fw-muted">No written comments yet.</p>
+      ) : (
+        <div className="fw-roster">
+          {openNotes.map(([label, text], i) => (
+            <div key={i} className="fw-person" style={{ cursor: "default", alignItems: "flex-start" }}>
+              <span>
+                <span className="fw-label" style={{ display: "inline", margin: 0 }}>{label}:</span>{" "}
+                {text}
+              </span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
