@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/auth";
 import { listAttendees, upsertAttendee } from "@/lib/db";
-import { sendSurveyReminder, getEmailOpened } from "@/lib/email";
+import { sendSurveyReminderBatch, getEmailOpened } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -61,7 +61,7 @@ export async function POST(req) {
     const all = await listAttendees();
     const checkedIn = all.filter((a) => a.email && hasCheckin(a));
 
-    let recipients = checkedIn;
+    let recipients;
     let opened = 0;
     if (mode === "nonopeners") {
       const openedFlags = await mapPool(checkedIn, 15, async (a) =>
@@ -71,6 +71,10 @@ export async function POST(req) {
       // Non-openers = checked-in people who didn't open round one (which
       // includes anyone who was never sent it, e.g. checked in afterward).
       recipients = checkedIn.filter((_, i) => !openedFlags[i]);
+    } else {
+      // "all" skips anyone already sent successfully, so re-running after a
+      // partial/rate-limited send only hits the people who haven't gotten it.
+      recipients = checkedIn.filter((a) => !a.surveyReminder?.id);
     }
 
     if (dryRun) {
@@ -84,25 +88,28 @@ export async function POST(req) {
       });
     }
 
-    const results = await mapPool(recipients, 8, async (a) => {
-      const r = await sendSurveyReminder({
-        email: a.email,
-        firstName: firstNameOf(a),
-        subject: round.subject,
-        intro: round.intro,
-      });
-      if (r.sent && r.id) {
-        try {
-          await upsertAttendee({ ...a, [round.key]: { id: r.id, ts: new Date().toISOString() } });
-        } catch {
-          /* non-fatal: the email went out even if we couldn't record the id */
-        }
-      }
-      return r;
+    const batch = await sendSurveyReminderBatch({
+      recipients: recipients.map((a) => ({ email: a.email, firstName: firstNameOf(a) })),
+      subject: round.subject,
+      intro: round.intro,
     });
 
-    const sent = results.filter((r) => r.sent).length;
-    const failed = results.length - sent;
+    // Record the message id on each attendee who was sent (so the follow-up
+    // can look up opens). Writes go to our own DB — no Resend rate limit.
+    const sentWithId = recipients
+      .map((a, i) => ({ a, r: batch[i] }))
+      .filter(({ r }) => r && r.sent && r.id);
+    await mapPool(sentWithId, 12, async ({ a, r }) => {
+      try {
+        await upsertAttendee({ ...a, [round.key]: { id: r.id, ts: new Date().toISOString() } });
+      } catch {
+        /* non-fatal: the email went out even if we couldn't record the id */
+      }
+    });
+
+    const sent = batch.filter((r) => r.sent).length;
+    const failed = batch.length - sent;
+    const firstError = (batch.find((r) => !r.sent) || {}).error || null;
     return NextResponse.json({
       ok: true,
       mode,
@@ -111,6 +118,7 @@ export async function POST(req) {
       attempted: recipients.length,
       sent,
       failed,
+      ...(failed ? { error: firstError } : {}),
     });
   } catch (e) {
     return NextResponse.json({ error: e.message || "Couldn't send reminders." }, { status: 500 });

@@ -2053,7 +2053,10 @@ function FeedbackAdmin({ sessions }) {
         setRemMsg(r.error || "Send failed.");
         return;
       }
-      setRemMsg(`Sent ${r.sent} of ${r.attempted}.${r.failed ? ` ${r.failed} failed.` : ""}`);
+      setRemMsg(
+        `Sent ${r.sent} of ${r.attempted}.` +
+          (r.failed ? ` ${r.failed} failed${r.error ? ` (${r.error})` : ""}. Click again to retry just those.` : "")
+      );
     } finally {
       setRemBusy("");
     }
