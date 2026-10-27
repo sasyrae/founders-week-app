@@ -79,6 +79,8 @@ export const api = {
   submitFeedback: (payload) =>
     jsonFetch("/api/feedback", { method: "POST", body: JSON.stringify({ ...payload, rid: feedbackRid() }) }),
   adminFeedback: () => jsonFetch("/api/admin/feedback"),
+  adminRemindSurvey: (mode, dryRun) =>
+    jsonFetch("/api/admin/feedback/remind", { method: "POST", body: JSON.stringify({ mode, dryRun }) }),
 
   // matchmaking ("Meet people")
   meetWhoAmI: () => jsonFetch("/api/meet/session"),

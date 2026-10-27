@@ -2030,7 +2030,34 @@ function MatchAdmin({ flash }) {
 function FeedbackAdmin({ sessions }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
+  const [remBusy, setRemBusy] = useState("");
+  const [remMsg, setRemMsg] = useState("");
   const titleOf = (id) => (sessions.find((s) => s.id === id) || {}).title || id;
+
+  const runReminder = async (mode) => {
+    setRemMsg("");
+    setRemBusy(mode);
+    try {
+      const pre = await api.adminRemindSurvey(mode, true);
+      if (!pre.ok) {
+        setRemMsg(pre.error || "Couldn't check recipients.");
+        return;
+      }
+      const prompt =
+        mode === "all"
+          ? `Send the survey reminder now to ${pre.recipients} checked-in attendee${pre.recipients === 1 ? "" : "s"}?`
+          : `${pre.opened} of ${pre.total} opened the first reminder. Send a last-call now to the ${pre.recipients} who didn't?`;
+      if (!window.confirm(prompt)) return;
+      const r = await api.adminRemindSurvey(mode, false);
+      if (!r.ok) {
+        setRemMsg(r.error || "Send failed.");
+        return;
+      }
+      setRemMsg(`Sent ${r.sent} of ${r.attempted}.${r.failed ? ` ${r.failed} failed.` : ""}`);
+    } finally {
+      setRemBusy("");
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -2066,6 +2093,23 @@ function FeedbackAdmin({ sessions }) {
       <a className="fw-add" href="/api/admin/feedback?format=csv" style={{ display: "inline-block" }}>
         Download all feedback (CSV)
       </a>
+
+      <div style={{ marginTop: 24, padding: 16, border: "1px solid #e4e8ef", borderRadius: 12 }}>
+        <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 0 }}>Survey reminders</h3>
+        <p className="fw-p" style={{ marginTop: 0 }}>
+          Emails checked-in attendees a reminder to complete the survey, from events@mail.flybridge.com.
+          Sent through Resend, so opens are tracked — use “Send to non-openers” for the follow-up.
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button className="fw-primary" disabled={!!remBusy} onClick={() => runReminder("all")}>
+            {remBusy === "all" ? "Working…" : "Send reminder to all checked-in"}
+          </button>
+          <button className="fw-add" disabled={!!remBusy} onClick={() => runReminder("nonopeners")}>
+            {remBusy === "nonopeners" ? "Working…" : "Send to non-openers"}
+          </button>
+        </div>
+        {remMsg && <p className="fw-p" style={{ marginTop: 10, fontWeight: 600 }}>{remMsg}</p>}
+      </div>
 
       <h3 className="fw-h2" style={{ fontSize: 20, marginTop: 24 }}>Next year — smaller offsite</h3>
       <p className="fw-p" style={{ marginTop: 0 }}>
